@@ -1,0 +1,130 @@
+{data:[{
+    name: '非自动驾驶',
+
+
+    children: [{
+        name: '开机时长',
+        value: 3,
+        itemStyle: {
+            color: color[2]
+        },
+        children: [{
+            name: '行驶时长',
+            value: 1,
+            itemStyle: {
+                color: color[0]
+            }
+        }, {
+            name: '工作时长',
+            value: 1,
+            itemStyle: {
+                color: color[1]
+            }
+        }, {
+            name: '停留时长',
+            value: 1,
+            itemStyle: {
+                color: color[2]
+            }
+        }]
+    }, {
+        name: '行驶里程',
+        value: 4,
+        itemStyle: {
+            color: color[1]
+        },
+        children: [{
+            name: '工作里程',
+            value: 1,
+            itemStyle: {
+                color: color[0]
+            }
+        }, {
+            name: '异常里程',
+            value: 1,
+            itemStyle: {
+                color: color[1]
+            }
+        }]
+    }, {
+        name: '油箱容量',
+        value: 4,
+        itemStyle: {
+            color: color[3]
+        },
+        children: [{
+            name: '工作油耗',
+            value: 1,
+            itemStyle: {
+                color: color[0]
+            }
+        }, {
+            name: '非工作油耗',
+            value: 1,
+            itemStyle: {
+                color: color[1]
+            }
+        }, {
+            name: '开机油量',
+            value: 1,
+            itemStyle: {
+                color: color[2]
+            }
+        }, {
+            name: '关机油量',
+            value: 1,
+            itemStyle: {
+                color: color[3]
+            }
+        }, {
+            name: '当天耗油量',
+            value: 1,
+            itemStyle: {
+                color: color[4]
+            }
+        }, {
+            name: '百公里油耗',
+            value: 1,
+            itemStyle: {
+                color: color[5]
+            }
+        }]
+    }, {
+        name: '行车分析',
+        value: 3,
+        itemStyle: {
+            color: color[4]
+        },
+        children: [{
+            name: '工作里程',
+            value: 1,
+            itemStyle: {
+                color: color[0]
+            }
+        }, {
+            name: '工作速度',
+            value: 1,
+            itemStyle: {
+                color: color[1]
+            }
+        }, {
+            name: '工作时长',
+            value: 1,
+            itemStyle: {
+                color: color[2]
+            }
+        }, {
+            name: '工作油耗',
+            value: 1,
+            itemStyle: {
+                color: color[3]
+            }
+        }, {
+            name: '停留时长',
+            value: 1,
+            itemStyle: {
+                color: color[4]
+            }
+        }]
+    }]
+}]}
