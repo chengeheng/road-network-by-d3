@@ -44,6 +44,12 @@ const data = {
       },
       properties: {
         option: {
+          strokeColor: "#1176f0",
+          strokeWidth: 0.5,
+          fillColor: "#AC9980",
+          selectColor: "#ddab15",
+          selectable: true,
+          onSelect: (e) => console.log("select", e),
           onClick: (e) => console.log("click", e),
         },
       },
@@ -88,7 +94,6 @@ function App() {
         center={[118.39067530252157, 31.343146080447582]}
         onClick={(e) => console.log("click Map", e)}
       >
-        <Layer type="Polygon" dataSource={data.polygons} />
         <Layer type="Polygon" dataSource={data.polygons} />
       </Map>
     </div>

@@ -1,7 +1,13 @@
 import * as d3 from "d3";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 const defaultPolygons = [];
+
+const getConfig = (item = {}, params, key) => {
+  const { properties = {} } = item;
+  const { option = {} } = properties;
+  return option[key] ?? params[key];
+};
 
 const PolygonLayer = (props) => {
   const {
@@ -13,7 +19,22 @@ const PolygonLayer = (props) => {
   } = props;
   useEffect(() => {
     if (projection) {
-      const { onClick: svgClick } = options;
+      const {
+        onClick: layerClick,
+        selectable = false,
+        selectColor = "#fff",
+        strokeColor = "#333",
+        strokeWidth = 1,
+        fillColor = "#fff",
+      } = options;
+      const optionParams = {
+        selectable,
+        selectColor,
+        strokeColor,
+        strokeWidth,
+        fillColor,
+      };
+
       const path = d3.geoPath().projection(projection);
       const base = d3.select(`.layer-${id}-bottom`);
       base
@@ -22,11 +43,9 @@ const PolygonLayer = (props) => {
         .enter()
         .append("path")
         .attr("d", path)
-        .attr("stroke", "#AC9980")
-        .attr("stoke-width", 0.5)
-        .attr("fill", (d) =>
-          d.geometry.type === "Polygon" ? "#FDBE6E" : "transparent"
-        )
+        .attr("stroke", (d) => getConfig(d, optionParams, "strokeColor"))
+        .attr("stroke-width", (d) => getConfig(d, optionParams, "strokeWidth"))
+        .attr("fill", (d) => getConfig(d, optionParams, "fillColor"))
         .on("click", (e, d) => {
           const { properties = {} } = d;
           const { option = {} } = properties;
@@ -34,38 +53,47 @@ const PolygonLayer = (props) => {
           if (onClick) {
             onClick(e, d);
           }
-          if (svgClick) {
-            svgClick(e, d);
+          if (layerClick) {
+            layerClick(e, d);
           }
         })
         .on("mousemove", (e, d) => {
-          const { geometry } = d;
+          const { geometry, properties = {} } = d;
+          const { option = {} } = properties;
           const { coordinates = [] } = geometry;
-          const item = coordinates.find((i) => {
-            return d3.polygonContains(
-              i,
-              projection.invert(d3.pointer(e, coordinate))
-            );
-          });
-          if (item) {
-            d3.select(`.layer-${id}-top`).select("path").remove();
-            d3.select(`.layer-${id}-top`)
-              .selectAll("path")
-              .data([
-                {
-                  type: "Feature",
-                  geometry: {
-                    type: "Polygon",
-                    coordinates: [item] ?? [],
+          const currentParams = { ...optionParams, ...option };
+          if (currentParams.selectable) {
+            const item = coordinates.find((i) => {
+              return d3.polygonContains(
+                i,
+                projection.invert(d3.pointer(e, coordinate))
+              );
+            });
+            if (item) {
+              d3.select(`.layer-${id}-top`).select("path").remove();
+              d3.select(`.layer-${id}-top`)
+                .selectAll("path")
+                .data([
+                  {
+                    type: "Feature",
+                    geometry: {
+                      type: "Polygon",
+                      coordinates: [item] ?? [],
+                    },
+                    properties,
                   },
-                },
-              ])
-              .enter()
-              .append("path")
-              .attr("d", path)
-              .attr("stroke", "#AC9980")
-              .attr("stoke-width", 0.5)
-              .attr("fill", (d) => "red");
+                ])
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("stroke", (d) =>
+                  getConfig(d, optionParams, "strokeColor")
+                )
+                .attr("stroke-width", (d) =>
+                  getConfig(d, optionParams, "strokeWidth")
+                )
+                .attr("fill", (d) => getConfig(d, optionParams, "selectColor"));
+            }
           }
         })
         .on("mouseleave", (e) => {

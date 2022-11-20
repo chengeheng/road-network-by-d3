@@ -1,8 +1,7 @@
 import React from "react";
-
 import PolygonLayer from "./PolygonLayer";
 
-const Layer = (props) => {
+const Layer = React.memo((props) => {
   const { type = "Polygon", ...rest } = props;
   switch (type) {
     case "Polygon":
@@ -10,6 +9,6 @@ const Layer = (props) => {
     default:
       return <></>;
   }
-};
+});
 
-export default React.memo(Layer);
+export default Layer;
