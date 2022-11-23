@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+
+		<script src="https://d3js.org/d3.v5.js"></script>
+	</head>
+
+	<body>
+		<center>
+			<h1 style="color: green">Geeksforgeeks</h1>
+
+			<h3>D3.js | zoom.scaleBy() Function</h3>
+
+			<svg height="100px" width="100px"></svg>
+
+			<script>
+				const zoom_action = () => g.attr("transform", d3.event.transform);
+
+				// Create the zoom handler
+				const zoom = d3.zoom().on("zoom", zoom_action);
+
+				// Get SVG element and apply zoom behaviour
+				var svg = d3.select("svg").call(zoom);
+
+				// Create Group that will be zoomed
+				var g = svg.append("g");
+
+				// Create circle
+				g.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 5).style("fill", "green");
+
+				// Use of zoom.scaleBy Function
+				zoom.scaleBy(svg, 5);
+				zoom.translateBy(svg, 50, 50);
+			</script>
+		</center>
+	</body>
+</html>
