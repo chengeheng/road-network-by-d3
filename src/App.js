@@ -1,5 +1,5 @@
 import "./App.css";
-import Map from "./map/index";
+import Map from "./map/Map";
 import Layer from "./map/Layer";
 
 const data = {
@@ -8,6 +8,20 @@ const data = {
 			id: 1,
 			name: "金宝大酒店",
 			coordinate: [118.39053, 31.343104],
+			option: {
+				strokeColor: "#1176f0",
+				strokeWidth: 0.5,
+				fillColor: "#AC9980",
+				selectColor: "#FF9400",
+				selectable: true,
+				stopPropagation: true,
+				hoverColor: "#28B9F0",
+				onClick: e => {
+					console.log("pointEvent", e);
+				},
+				onDbClick: e => console.log("point double click", e),
+				onRightClick: e => console.log("point right click", e),
+			},
 		},
 		{
 			id: 2,
@@ -16,29 +30,31 @@ const data = {
 	],
 	lineStrings: [
 		{
-			type: "Feature",
-			geometry: {
-				type: "MultiLineString",
-				coordinates: [
-					[
-						[118.390355, 31.343096],
-						[118.390607, 31.342961],
-						[118.390184, 31.342456],
-						[118.389996, 31.342529],
-						[118.390355, 31.343096],
+			data: [
+				{
+					id: 1,
+					coordinates: [
+						[118.390292, 31.343134],
+						[118.389919, 31.342591],
 					],
-				],
-			},
-			properties: {
-				option: {
-					strokeColor: "#1176f0",
-					strokeWidth: 0.5,
-					fillColor: "#AC9980",
-					selectColor: "#FF9400",
-					selectable: true,
-					hoverColor: "#28B9F0",
-					onSelect: e => console.log("select", e),
-					onClick: e => console.log("click", e),
+				},
+				{
+					id: 2,
+					coordinates: [
+						[118.390377, 31.343235],
+						[118.390876, 31.343932],
+					],
+				},
+			],
+			option: {
+				strokeColor: "#1176f0",
+				strokeWidth: 1,
+				selectColor: "#FF9400",
+				selectable: true,
+				hoverColor: "#28B9F0",
+				stopPropagation: true,
+				onClick: e => {
+					console.log("polylineEvent", e);
 				},
 			},
 		},
@@ -91,6 +107,7 @@ function App() {
 			>
 				<Layer type="Polygon" dataSource={data.polygons} />
 				<Layer type="Point" dataSource={data.points} />
+				<Layer type="LineString" dataSource={data.lineStrings} />
 			</Map>
 		</div>
 	);

@@ -9,6 +9,16 @@ const getConfig = (item = {}, params, key) => {
 	return option[key] ?? params[key];
 };
 
+const isPointInLine = (coordinates, point, projection, lineWidth) => {
+	const halfWidth = lineWidth / 2;
+	const lineAreas = coordinates.map(projection).reduce((pre, cur) => {
+		pre.unshift([cur[0] + halfWidth, cur[1] + halfWidth]);
+		pre.push([cur[0] - halfWidth, cur[1] - halfWidth]);
+		return pre;
+	}, []);
+	return d3.polygonContains(lineAreas, point);
+};
+
 const PolygonLayer = props => {
 	const { id, dataSource = defaultPolygons, projection, coordinate, option = {} } = props;
 	const stateRef = useRef({
@@ -30,7 +40,7 @@ const PolygonLayer = props => {
 			return {
 				type: "Feature",
 				geometry: {
-					type: "Polygon",
+					type: "MultiLineString",
 					coordinates: coordinates,
 				},
 				properties: {
@@ -65,7 +75,7 @@ const PolygonLayer = props => {
 			const stateRefData = stateRef.current;
 
 			const path = d3.geoPath().projection(projection);
-			const base = d3.select(`.polygon-layer-${id}-bottom`);
+			const base = d3.select(`.line-layer-${id}-bottom`);
 			base
 				.selectAll("path")
 				.data(formatData)
@@ -85,7 +95,12 @@ const PolygonLayer = props => {
 					const { coordinates = [] } = geometry;
 
 					const index = coordinates.findIndex(i =>
-						d3.polygonContains(i, projection.invert(d3.pointer(e, coordinate)))
+						isPointInLine(
+							i,
+							d3.pointer(e, coordinate),
+							projection,
+							getConfig(d, optionParams, "strokeWidth")
+						)
 					);
 					const originalParams = originData?.data[index];
 					clearTimeout(stateRefData.clickTimer);
@@ -101,18 +116,18 @@ const PolygonLayer = props => {
 								} else {
 									stateRefData.selectedIndexs.add(index);
 								}
-								d3.select(`.polygon-layer-${id}-middle`).select("path").remove();
+								d3.select(`.line-layer-${id}-middle`).select("path").remove();
 								const selectedPaths = coordinates.filter((_, index) =>
 									stateRefData.selectedIndexs.has(index)
 								);
 
-								d3.select(`.polygon-layer-${id}-middle`)
+								d3.select(`.line-layer-${id}-middle`)
 									.selectAll("path")
 									.data([
 										{
 											type: "Feature",
 											geometry: {
-												type: "Polygon",
+												type: "MultiLineString",
 												coordinates: selectedPaths,
 											},
 											properties,
@@ -121,9 +136,8 @@ const PolygonLayer = props => {
 									.enter()
 									.append("path")
 									.attr("d", path)
-									.attr("stroke", d => getConfig(d, optionParams, "strokeColor"))
-									.attr("stroke-width", d => getConfig(d, optionParams, "strokeWidth"))
-									.attr("fill", d => getConfig(d, optionParams, "selectColor"));
+									.attr("stroke", d => getConfig(d, optionParams, "selectColor"))
+									.attr("stroke-width", d => getConfig(d, optionParams, "strokeWidth"));
 							}
 							if (clickFn) {
 								clickFn({
@@ -160,18 +174,23 @@ const PolygonLayer = props => {
 					const { coordinates = [] } = geometry;
 					const hasHover = getConfig(d, optionParams, "hoverColor");
 					if (hasHover) {
-						const item = coordinates.find(i => {
-							return d3.polygonContains(i, projection.invert(d3.pointer(e, coordinate)));
-						});
+						const item = coordinates.find(i =>
+							isPointInLine(
+								i,
+								d3.pointer(e, coordinate),
+								projection,
+								getConfig(d, optionParams, "strokeWidth")
+							)
+						);
 						if (item) {
-							d3.select(`.polygon-layer-${id}-top`).select("path").remove();
-							d3.select(`.polygon-layer-${id}-top`)
+							d3.select(`.line-layer-${id}-top`).select("path").remove();
+							d3.select(`.line-layer-${id}-top`)
 								.selectAll("path")
 								.data([
 									{
 										type: "Feature",
 										geometry: {
-											type: "Polygon",
+											type: "MultiLineString",
 											coordinates: [item] ?? [],
 										},
 										properties,
@@ -180,21 +199,25 @@ const PolygonLayer = props => {
 								.enter()
 								.append("path")
 								.attr("d", path)
-								.attr("stroke", d => getConfig(d, optionParams, "strokeColor"))
-								.attr("stroke-width", d => getConfig(d, optionParams, "strokeWidth"))
-								.attr("fill", d => getConfig(d, optionParams, "hoverColor"));
+								.attr("stroke", d => getConfig(d, optionParams, "hoverColor"))
+								.attr("stroke-width", d => getConfig(d, optionParams, "strokeWidth"));
 						}
 					}
 				})
 				.on("mouseleave", e => {
-					d3.select(`.polygon-layer-${id}-top`).select("path").remove();
+					d3.select(`.line-layer-${id}-top`).select("path").remove();
 				})
 				.on("contextmenu", (e, d) => {
 					const { geometry, properties = {} } = d;
 					const { originData = {} } = properties;
 					const { coordinates = [] } = geometry;
 					const index = coordinates.findIndex(i =>
-						d3.polygonContains(i, projection.invert(d3.pointer(e, coordinate)))
+						isPointInLine(
+							i,
+							d3.pointer(e, coordinate),
+							projection,
+							getConfig(d, optionParams, "strokeWidth")
+						)
 					);
 					const originalParams = originData?.data[index];
 					const rightClickFn = getConfig(d, optionParams, "onRightClick");
@@ -215,16 +238,16 @@ const PolygonLayer = props => {
 	}, [formatData, id, projection, coordinate, option, stateRef]);
 
 	return (
-		<g className={`polygon-layer-${id}`}>
-			<g className={`polygon-layer-${id}-bottom`}></g>
+		<g className={`line-layer-${id}`}>
+			<g className={`line-layer-${id}-bottom`}></g>
 			<g
-				className={`polygon-layer-${id}-middle`}
+				className={`line-layer-${id}-middle`}
 				style={{
 					pointerEvents: "none",
 				}}
 			></g>
 			<g
-				className={`polygon-layer-${id}-top`}
+				className={`line-layer-${id}-top`}
 				style={{
 					pointerEvents: "none",
 				}}

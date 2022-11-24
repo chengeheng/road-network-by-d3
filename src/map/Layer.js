@@ -1,6 +1,7 @@
 import React from "react";
 import PolygonLayer from "./PolygonLayer";
 import PointLayer from "./PointLayer";
+import LineLayer from "./LineLayer";
 
 const Layer = React.memo(props => {
 	const { type = "Polygon", ...rest } = props;
@@ -8,7 +9,7 @@ const Layer = React.memo(props => {
 		case "Polygon":
 			return <PolygonLayer {...rest} />;
 		case "LineString":
-			return <PolygonLayer {...rest} />;
+			return <LineLayer {...rest} />;
 		case "Point":
 			return <PointLayer {...rest} />;
 		default:
