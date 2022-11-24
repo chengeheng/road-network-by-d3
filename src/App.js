@@ -1,6 +1,5 @@
 import "./App.css";
-import Map from "./map/Map";
-import Layer from "./map/Layer";
+import Map, { Layer } from "./map";
 
 const data = {
 	points: [
