@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import React, { useEffect, useRef } from "react";
-import DefaultPointSvg from "../images/point.png";
+import DefaultPointSvg from "../images/point.svg";
 
 const defaultPolygons = [];
 
