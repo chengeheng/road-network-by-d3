@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import "./App.css";
 
 import Map from "./map/index";
-import PolygonLayer from "./map/PolygonLayer";
+import PolygonLayer, { PolygonDataSource } from "./map/PolygonLayer";
 
 // const data = {
 //   points: [
@@ -101,13 +101,63 @@ import PolygonLayer from "./map/PolygonLayer";
 // };
 
 function App() {
-  useEffect(() => {
-    const map = new Map("container");
-    const layer = new PolygonLayer();
-    map.addLayer(layer);
-  }, []);
+	useEffect(() => {
+		const data: PolygonDataSource[] = [
+			{
+				data: [
+					{
+						id: 1,
+						coordinates: [
+							[118.390562, 31.342822],
+							[118.391828, 31.34268],
+							[118.391842, 31.341353],
+							[118.390764, 31.341311],
+							[118.390562, 31.342822],
+						],
+						reverseCoords: [
+							[118.39102, 31.342313],
+							[118.39102, 31.34172],
+							[118.391572, 31.341739],
+							[118.391451, 31.342275],
+							[118.39102, 31.342313],
+						],
+					},
+				],
+				option: {
+					strokeColor: "#1176f0",
+					strokeWidth: 0.5,
+					fillColor: "#AC9980",
+					selectable: true,
+					hoverColor: "#28B9F0",
+				},
+			},
+			// {
+			// 	data: [
+			// 		{
+			// 			id: 2,
+			// 			coordinates: [
+			// 				[118.39102, 31.342313],
+			// 				[118.39102, 31.34172],
+			// 				[118.391572, 31.341739],
+			// 				[118.391451, 31.342275],
+			// 				[118.39102, 31.342313],
+			// 			],
+			// 		},
+			// 	],
+			// 	option: {
+			// 		strokeWidth: 0.5,
+			// 		selectable: true,
+			// 		selectColor: "red",
+			// 		hoverColor: "green",
+			// 	},
+			// },
+		];
+		const map = new Map("container", { center: [118.391262, 31.342047] });
+		const layer = new PolygonLayer(data);
+		map.addLayer(layer);
+	}, []);
 
-  return <div className="App" id="container"></div>;
+	return <div className="App" id="container"></div>;
 }
 
 export default App;
