@@ -26,7 +26,6 @@ class Layer {
 		this.projection = projection;
 	}
 
-	// TODO 删除当前图层
 	remove() {}
 }
 

@@ -1,10 +1,9 @@
 import * as d3 from "d3";
 import Layer, { LayerOption, LayerType } from "./Layer";
 
-type polygonItem = {
+type polyLineItem = {
 	id: string | number;
 	coordinates: [number, number][];
-	reverseCoords?: [number, number][];
 	[propName: string]: any;
 };
 
@@ -13,14 +12,12 @@ enum StrokeLineType {
 	solid = "solid",
 }
 
-interface PolygonLayerOption extends LayerOption {
+interface PolyLineLayerOption extends LayerOption {
 	strokeColor?: string;
 	strokeWidth?: number;
 	strokeOpacity?: number;
 	strokeType?: StrokeLineType;
 	strokeDashArray?: number[];
-	fillColor?: string;
-	fillOpacity?: number;
 	selectColor?: string;
 	selectable?: boolean;
 	hoverColor?: string;
@@ -30,14 +27,12 @@ interface PolygonLayerOption extends LayerOption {
 	onDbClick?: Function;
 }
 
-interface PolygonOption extends PolygonLayerOption {
+interface PolyLineOption extends PolyLineLayerOption {
 	strokeColor: string;
 	strokeWidth: number;
 	strokeOpacity: number;
 	strokeType: StrokeLineType;
 	strokeDashArray: number[];
-	fillColor: string;
-	fillOpacity: number;
 	selectColor: string;
 	selectable: boolean;
 	hoverColor: string;
@@ -47,19 +42,17 @@ interface PolygonOption extends PolygonLayerOption {
 	onDbClick: Function;
 }
 
-interface PolygonDataSource {
-	data: polygonItem[];
-	option?: PolygonLayerOption;
+interface PolyLineDataSource {
+	data: polyLineItem[];
+	option?: PolyLineLayerOption;
 }
 
-const defaultOption: PolygonOption = {
+const defaultOption: PolyLineOption = {
 	strokeColor: "#333333",
 	strokeWidth: 1,
 	strokeOpacity: 1,
 	strokeType: StrokeLineType.solid,
 	strokeDashArray: [2, 3],
-	fillColor: "transparent",
-	fillOpacity: 1,
 	selectColor: "yellow",
 	selectable: false,
 	hoverColor: "green",
@@ -69,9 +62,9 @@ const defaultOption: PolygonOption = {
 	onDbClick: () => {},
 };
 
-class PolygonLayer extends Layer {
-	data: PolygonDataSource[];
-	option: PolygonOption;
+class PolyLineLayer extends Layer {
+	data: PolyLineDataSource[];
+	option: PolyLineOption;
 	path!: d3.GeoPath<any, any>;
 
 	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -82,7 +75,7 @@ class PolygonLayer extends Layer {
 	private clickTimer: NodeJS.Timeout | undefined;
 	private selectIndexs: Set<number>;
 
-	constructor(dataSource: PolygonDataSource[], option: PolygonLayerOption = defaultOption) {
+	constructor(dataSource: PolyLineDataSource[], option: PolyLineLayerOption = defaultOption) {
 		super(LayerType.PolygonLayer, option);
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
@@ -113,7 +106,7 @@ class PolygonLayer extends Layer {
 		this.container.style("display", "none");
 	}
 
-	updateData(data: PolygonDataSource[]) {
+	updateData(data: PolyLineDataSource[]) {
 		this.data = data;
 		this.draw();
 	}
@@ -138,19 +131,21 @@ class PolygonLayer extends Layer {
 					return null;
 				}
 			})
-			.attr("stroke-opacity", d => d.properties.option.strokeOpacity)
-			.attr("fill", d => d.properties.option.fillColor)
-			.attr("fill-opacity", d => d.properties.option.fillOpacity)
+			.attr("fill", "none")
 			.on("click", (e, d) => {
 				if (d.properties.option.stopPropagation) {
 					e.stopPropagation();
 				}
 				this.clickCount++;
-				const { coordinates } = d.geometry;
 				const originData = d.properties.originData;
-
-				const targetCoord = this.projection.invert!(d3.pointer(e, this.container.node()));
-				const index = coordinates.findIndex(i => d3.polygonContains(i, targetCoord!));
+				const index = d.geometry.coordinates.findIndex(i =>
+					this.isPointInLine(
+						i,
+						d3.pointer(e, this.container.node())!,
+						this.projection,
+						d.properties.option.strokeWidth
+					)
+				);
 				const originalParams = originData?.data[index];
 				clearTimeout(this.clickTimer);
 				this.clickTimer = setTimeout(() => {
@@ -170,9 +165,6 @@ class PolygonLayer extends Layer {
 							);
 							const selectedPaths = selectedDatas.reduce((pre, cur) => {
 								pre.push(cur.coordinates);
-								if (cur.reverseCoords) {
-									pre.push(cur.reverseCoords);
-								}
 								return pre;
 							}, [] as [number, number][][]);
 
@@ -212,18 +204,21 @@ class PolygonLayer extends Layer {
 				const { coordinates } = d.geometry;
 				const hasHover = d.properties.option.hoverColor;
 				if (hasHover) {
-					const targetCoord = this.projection.invert!(d3.pointer(e, this.container.node()));
-					const index = coordinates.findIndex(i => {
-						return d3.polygonContains(i, targetCoord!);
-					});
+					const index = coordinates.findIndex(i =>
+						this.isPointInLine(
+							i,
+							d3.pointer(e, this.container.node())!,
+							this.projection,
+							d.properties.option.strokeWidth
+						)
+					);
+
 					if (index > -1) {
 						this.hoverLayer.select("path").remove();
 						const selectedData = d.properties.originData.data[index];
 						const selectedPaths = [];
 						selectedPaths.push(selectedData.coordinates);
-						if (selectedData.reverseCoords) {
-							selectedPaths.push(selectedData.reverseCoords);
-						}
+
 						this.drawHoverLayer(selectedPaths, d.properties);
 					}
 				}
@@ -232,9 +227,14 @@ class PolygonLayer extends Layer {
 				this.hoverLayer.select("path").remove();
 			})
 			.on("contextmenu", (e, d) => {
-				const targetCoord = this.projection.invert!(d3.pointer(e, this.container.node()));
-				const index = d.geometry.coordinates.findIndex(i => d3.polygonContains(i, targetCoord!));
-
+				const index = d.geometry.coordinates.findIndex(i =>
+					this.isPointInLine(
+						i,
+						d3.pointer(e, this.container.node())!,
+						this.projection,
+						d.properties.option.strokeWidth
+					)
+				);
 				const originalParams = d.properties.originData?.data[index];
 				const rightClickFn = d.properties.option.onRightClick;
 				if (rightClickFn) {
@@ -256,8 +256,8 @@ class PolygonLayer extends Layer {
 		coords: [number, number][][],
 		properties: {
 			[propName: string]: any;
-			option: PolygonOption;
-			originData: PolygonDataSource;
+			option: PolyLineOption;
+			originData: PolyLineDataSource;
 			ids: (string | number)[];
 		}
 	) {
@@ -267,7 +267,7 @@ class PolygonLayer extends Layer {
 				{
 					type: "Feature",
 					geometry: {
-						type: "Polygon",
+						type: "MultiLineString",
 						coordinates: coords,
 					},
 					properties,
@@ -276,10 +276,9 @@ class PolygonLayer extends Layer {
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", l => l.properties.option.strokeColor)
+			.attr("stroke", l => l.properties.option.selectColor)
 			.attr("stroke-width", l => l.properties.option.strokeWidth)
-			.attr("stroke-opacity", d => d.properties.option.strokeOpacity)
-			.attr("fill", l => l.properties.option.selectColor)
+			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
 				if (l.properties.option.strokeType === StrokeLineType.dotted) {
 					return l.properties.option.strokeDashArray;
@@ -293,9 +292,9 @@ class PolygonLayer extends Layer {
 		coords: [number, number][][],
 		properties: {
 			[propName: string]: any;
-			option: PolygonOption;
+			option: PolyLineOption;
 			ids: (string | number)[];
-			originData: PolygonDataSource;
+			originData: PolyLineDataSource;
 		}
 	) {
 		this.hoverLayer
@@ -304,7 +303,7 @@ class PolygonLayer extends Layer {
 				{
 					type: "Feature",
 					geometry: {
-						type: "Polygon",
+						type: "MultiLineString",
 						coordinates: [...coords] ?? [],
 					},
 					properties,
@@ -313,11 +312,9 @@ class PolygonLayer extends Layer {
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", d => d.properties.option.strokeColor)
+			.attr("stroke", d => d.properties.option.hoverColor)
 			.attr("stroke-width", d => d.properties.option.strokeWidth)
-			.attr("stroke-opacity", d => d.properties.option.strokeOpacity)
-			.attr("fill", d => d.properties.option.hoverColor)
-			.attr("fill-opacity", d => d.properties.option.fillOpacity)
+			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
 				if (l.properties.option.strokeType === StrokeLineType.dotted) {
 					return l.properties.option.strokeDashArray;
@@ -327,25 +324,21 @@ class PolygonLayer extends Layer {
 			});
 	}
 
-	formatData(data: PolygonDataSource[]) {
+	formatData(data: PolyLineDataSource[]) {
 		return data.reduce(
 			(pre, cur) => {
 				const { data = [], option = {} } = cur;
 				const ids: (string | number)[] = [];
 				const coordinates: [number, number][][] = [];
-				const reverseCoords: [number, number][][] = [];
 				data.forEach(j => {
 					ids.push(j.id);
 					coordinates.push(j.coordinates);
-					if (j.reverseCoords) {
-						reverseCoords.push(j.reverseCoords);
-					}
 				});
 				pre.push({
 					type: "Feature",
 					geometry: {
-						type: "Polygon",
-						coordinates: [...coordinates, ...reverseCoords],
+						type: "MultiLineString",
+						coordinates: coordinates,
 					},
 					properties: {
 						option: {
@@ -366,16 +359,31 @@ class PolygonLayer extends Layer {
 					coordinates: [number, number][][];
 				};
 				properties: {
-					option: PolygonOption;
+					option: PolyLineOption;
 					ids: (string | number)[];
-					originData: PolygonDataSource;
+					originData: PolyLineDataSource;
 					[propName: string]: any;
 				};
 			}>
 		);
 	}
+
+	private isPointInLine(
+		coordinates: [number, number][],
+		point: [number, number],
+		projection: d3.GeoProjection,
+		lineWidth: number
+	) {
+		const halfWidth = lineWidth / 2;
+		const lineAreas = coordinates.map(projection).reduce((pre, cur) => {
+			pre.unshift([cur![0] + halfWidth, cur![1] + halfWidth]);
+			pre.push([cur![0] - halfWidth, cur![1] - halfWidth]);
+			return pre;
+		}, [] as [number, number][]);
+		return d3.polygonContains(lineAreas, point);
+	}
 }
 
-export type { PolygonDataSource };
+export type { PolyLineDataSource };
 
-export { PolygonLayer as default, StrokeLineType };
+export { PolyLineLayer as default, StrokeLineType };
