@@ -1,13 +1,6 @@
 {
 	"presets": [
 		[
-			"@babel/preset-typescript",
-			{
-				"isTSX": true,
-				"allExtensions": true
-			}
-		],
-		[
 			"@babel/preset-env",
 			{
 				"targets": {
@@ -18,6 +11,13 @@
 				},
 				"useBuiltIns": "usage",
 				"corejs": "3.6.5"
+			}
+		],
+		[
+			"@babel/preset-typescript",
+			{
+				"isTSX": true,
+				"allExtensions": true
 			}
 		]
 	]

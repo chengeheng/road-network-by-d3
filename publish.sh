@@ -1,5 +1,4 @@
-rm -rf ./lib/*
-npx babel src/map --out-dir lib/map --extensions .ts
+rm -rf ./lib/images
+tsc -p tsconfig.json --outDir lib/map 
 mkdir ./lib/images
 cp ./src/images/* ./lib/images
-# npm publish

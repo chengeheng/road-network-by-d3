@@ -1,7 +1,8 @@
+import React from "react";
 import { useEffect } from "react";
 import "./App.css";
 
-import Map from "./map/index";
+import Map from "./map";
 import PointLayer, { PointDataSource } from "./map/PointLayer";
 import PolygonLayer, { PolygonDataSource } from "./map/PolygonLayer";
 import PolyLineLayer, { PolyLineDataSource, StrokeLineType } from "./map/PolyLineLayer";
