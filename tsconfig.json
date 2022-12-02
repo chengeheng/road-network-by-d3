@@ -14,7 +14,9 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "react-jsx",
-		"outDir": "./lib/map"
+		"outDir": "./lib/map",
+		"declaration": true,
+		"rootDir": "src"
 	},
 	"include": ["src/map/**/*", "src/images/**/*"],
 	"exclude": ["node_module"]

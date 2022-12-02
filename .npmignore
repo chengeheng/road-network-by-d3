@@ -103,14 +103,21 @@ dist
 # TernJS port file
 .tern-port
 
+# git配置
+.gitignore
+
+# 发布脚本等 
 *.sh
 
+# 规范配置
 commitlint.config.js
 .prettierrc.js
-
-public
-
 .husky
+
+# 开发环境配置
+public
 babel.config.json
 src
-file
+package-lock.json
+rollup.config.js
+tsconfig.json
