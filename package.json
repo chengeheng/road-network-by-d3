@@ -7,17 +7,24 @@
 	"module": "lib/index.js",
 	"scripts": {
 		"start": "react-scripts start",
-		"build": "react-scripts build",
+		"build": "rollup -c",
 		"test": "react-scripts test",
 		"eject": "react-scripts eject",
 		"lint-staged": "lint-staged",
 		"prepare": "husky install"
 	},
 	"eslintConfig": {
-		"extends": ["react-app", "react-app/jest"]
+		"extends": [
+			"react-app",
+			"react-app/jest"
+		]
 	},
 	"browserslist": {
-		"production": [">0.2%", "not dead", "not op_mini all"],
+		"production": [
+			">0.2%",
+			"not dead",
+			"not op_mini all"
+		],
 		"development": [
 			"last 1 chrome version",
 			"last 1 firefox version",
@@ -59,6 +66,9 @@
 		}
 	},
 	"lint-staged": {
-		"*.{js,jsx}": ["eslint", "prettier --write"]
+		"*.{js,jsx}": [
+			"eslint",
+			"prettier --write"
+		]
 	}
 }
