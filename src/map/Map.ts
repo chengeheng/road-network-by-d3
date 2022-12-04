@@ -26,6 +26,8 @@ class Map {
 	private height: number;
 	private svg!: SVGSVGElement;
 	private options: MapOptionType;
+	private zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
+	private zoomLevel: number;
 
 	private layers: Layer[];
 
@@ -37,6 +39,7 @@ class Map {
 		this.width = 0;
 		this.height = 0;
 		this.layers = [];
+		this.zoomLevel = 1;
 
 		this.projection = d3.geoMercator();
 
@@ -71,6 +74,7 @@ class Map {
 	private init() {
 		const container = d3.select(this.container);
 		container.select("svg").remove();
+
 		const svg = container
 			.append("svg")
 			.attr("width", this.width)
@@ -87,14 +91,31 @@ class Map {
 		const zoom = d3
 			.zoom<SVGSVGElement, unknown>()
 			.scaleExtent([1 / 5, 5])
+			// .wheelDelta(event => {
+			// 	console.log(event, event.deltaY, event.deltaMode);
+			// 	return -event.deltaY * (event.deltaMode === 1 ? 0.5 : event.deltaMode ? 1 : 0.02);
+			// })
 			.on("zoom", e => {
+				// console.log(e);
+				// if (e?.sourceEvent?.type === "wheel") {
+				// 	if (e.sourceEvent.wheelDelta > 0) {
+				// 		console.log(this.zoomLevel);
+				// 		this.zoom.scaleTo(svg, this.zoomLevel++);
+				// 	} else {
+				// 		this.zoom.scaleTo(svg, this.zoomLevel--);
+				// 	}
+				// } else {
 				g.attr("transform", e.transform);
+				// }
 			});
-		zoom.scaleBy(svg, 1);
+		this.zoom = zoom;
+		zoom.scaleBy(svg, this.zoomLevel);
+		svg.transition().duration(1000);
 		svg
 			.call(zoom)
 			.on("click", e => {
 				const projection = this.projection;
+				console.log(d3.pointer(e, g.node()));
 				this.options.onClick(e, projection.invert!(d3.pointer(e, g.node())));
 			})
 			.on("dblclick.zoom", null);
@@ -117,6 +138,57 @@ class Map {
 	showLayer() {}
 	// TODO 隐藏layer
 	hideLayer() {}
+
+	/**
+	 * 移动到指定点位
+	 * @param coord 点位bd09坐标
+	 * @param zoomLevel 地图缩放层级
+	 */
+	moveTo(coord: [number, number], zoomLevel: number = 5) {
+		const svg = d3.select(this.svg);
+		const realCoord = this.projection(coord)!;
+		const t = d3.zoomIdentity.scale(zoomLevel).apply(realCoord);
+		const m = d3.zoomIdentity
+			.translate(-(t[0] - this.width / 2), -(t[1] - this.height / 2))
+			.scale(zoomLevel);
+		svg.transition().duration(1000).call(this.zoom.transform, m);
+	}
+
+	/**
+	 * 移动到某个区域的最佳视图
+	 * @param coords 坐标数组
+	 * @returns
+	 */
+	focusOnView(coords: [number, number][]): void {
+		const projectionCoords = coords.map(this.projection) as [number, number][];
+		if (projectionCoords.length === 0) {
+			return;
+		}
+		const min: [number, number] = [projectionCoords[0][0], projectionCoords[0][1]];
+		const max: [number, number] = [projectionCoords[0][0], projectionCoords[0][1]];
+		projectionCoords.forEach(i => {
+			if (i[0] < min[0]) {
+				min[0] = i[0];
+			}
+			if (i[1] < min[1]) {
+				min[1] = i[1];
+			}
+			if (i[0] > max[0]) {
+				max[0] = i[0];
+			}
+			if (i[1] > max[1]) {
+				max[1] = i[1];
+			}
+		});
+		const xScale = (max[0] - min[0]) / this.width;
+		const yScale = (max[1] - min[1]) / this.height;
+		const middle: [number, number] = this.projection.invert!([
+			(max[0] + min[0]) / 2,
+			(max[1] + min[1]) / 2,
+		]) as [number, number];
+		const scale = Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
+		this.moveTo(middle, scale > 5 ? 5 : scale);
+	}
 }
 
 export default Map;

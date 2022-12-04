@@ -67,6 +67,8 @@ class PointLayer extends Layer {
 		this.container = d3.select(svg).append("g");
 		this.container.selectAll("g").remove();
 
+		this.baseLayer = this.container.append("g");
+
 		this.draw();
 	}
 
@@ -86,13 +88,12 @@ class PointLayer extends Layer {
 
 	updateData(data: PointDataSource[]) {
 		this.data = data;
+		this.container.selectAll("image").remove();
+
 		this.draw();
 	}
 
-	draw() {
-		const base = this.container;
-		this.baseLayer = base.append("g");
-
+	protected draw() {
 		this.baseLayer
 			.selectAll("image")
 			.data(this.formatData(this.data))

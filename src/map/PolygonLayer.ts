@@ -96,6 +96,10 @@ class PolygonLayer extends Layer {
 		this.container = d3.select(svg).append("g");
 		this.container.selectAll("g").remove();
 
+		this.baseLayer = this.container.append("g");
+		this.selectLayer = this.container.append("g").style("pointer-events", "none");
+		this.hoverLayer = this.container.append("g").style("pointer-events", "none");
+
 		this.draw();
 	}
 
@@ -119,10 +123,10 @@ class PolygonLayer extends Layer {
 	}
 
 	draw() {
-		const base = this.container;
-		this.baseLayer = base.append("g");
-		this.selectLayer = base.append("g").style("pointer-events", "none");
-		this.hoverLayer = base.append("g").style("pointer-events", "none");
+		this.baseLayer.selectAll("path").remove();
+		this.selectLayer.selectAll("path").remove();
+		this.hoverLayer.selectAll("path").remove();
+
 		this.baseLayer
 			.selectAll("path")
 			.data(this.formatData(this.data))

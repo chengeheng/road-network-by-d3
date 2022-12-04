@@ -27,6 +27,7 @@ class Layer {
 	}
 
 	remove() {}
+	updateData(data: any) {}
 }
 
 export type { LayerOption };
