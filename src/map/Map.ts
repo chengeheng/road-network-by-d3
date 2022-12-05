@@ -187,7 +187,13 @@ class Map {
 			(max[1] + min[1]) / 2,
 		]) as [number, number];
 		const scale = Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
-		this.moveTo(middle, scale > 5 ? 5 : scale);
+		if (scale < 1 / 2) {
+			this.moveTo(middle, 0.5);
+		} else if (scale > 5) {
+			this.moveTo(middle, 5);
+		} else {
+			this.moveTo(middle, scale);
+		}
 	}
 }
 

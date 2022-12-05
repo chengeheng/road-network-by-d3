@@ -30,16 +30,23 @@ interface PointDataSource {
 declare class PointLayer extends Layer {
     data: PointDataSource[];
     option: PointOption;
+    isHided: boolean;
     baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     private clickCount;
     private clickTimer;
     constructor(dataSource: PointDataSource[], option?: PointLayerOption);
     init(svg: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
+    /**
+     * 显示当前图层
+     */
     show(): void;
+    /**
+     * 隐藏当前图层
+     */
     hide(): void;
     updateData(data: PointDataSource[]): void;
-    draw(): void;
+    protected draw(): void;
     formatData(data: PointDataSource[]): {
         coordinate: [number, number];
         icon: string;
@@ -56,6 +63,7 @@ declare class PointLayer extends Layer {
         id: string | number;
         name?: string | undefined;
     }[];
+    private calcuteTextWidth;
 }
 export type { PointDataSource };
 export default PointLayer;

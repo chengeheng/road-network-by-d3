@@ -73,6 +73,7 @@ class PolygonLayer extends Layer {
 	data: PolygonDataSource[];
 	option: PolygonOption;
 	path!: d3.GeoPath<any, any>;
+	isHided: boolean;
 
 	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -88,6 +89,7 @@ class PolygonLayer extends Layer {
 		this.option = { ...defaultOption, ...option };
 		this.clickCount = 0;
 		this.selectIndexs = new Set();
+		this.isHided = false;
 	}
 
 	init(svg: SVGGElement, projection: d3.GeoProjection) {
@@ -107,26 +109,31 @@ class PolygonLayer extends Layer {
 		this.container.remove();
 	}
 
-	// TODO 显示当前图层
+	/**
+	 * 显示当前图层
+	 */
 	show(): void {
 		this.container.style("display", "inline");
 	}
 
-	// TODO 隐藏当前图层
+	/**
+	 * 隐藏当前图层
+	 */
 	hide(): void {
 		this.container.style("display", "none");
 	}
 
 	updateData(data: PolygonDataSource[]) {
 		this.data = data;
-		this.draw();
-	}
 
-	draw() {
 		this.baseLayer.selectAll("path").remove();
 		this.selectLayer.selectAll("path").remove();
 		this.hoverLayer.selectAll("path").remove();
 
+		this.draw();
+	}
+
+	protected draw() {
 		this.baseLayer
 			.selectAll("path")
 			.data(this.formatData(this.data))

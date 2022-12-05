@@ -49,6 +49,7 @@ const defaultOption: PointOption = {
 class PointLayer extends Layer {
 	data: PointDataSource[];
 	option: PointOption;
+	isHided: boolean;
 
 	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 
@@ -60,6 +61,7 @@ class PointLayer extends Layer {
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
 		this.clickCount = 0;
+		this.isHided = false;
 	}
 
 	init(svg: SVGGElement, projection: d3.GeoProjection) {
@@ -76,29 +78,31 @@ class PointLayer extends Layer {
 		this.container.remove();
 	}
 
-	// TODO 显示当前图层
+	/**
+	 * 显示当前图层
+	 */
 	show(): void {
 		this.container.style("display", "inline");
 	}
 
-	// TODO 隐藏当前图层
+	/**
+	 * 隐藏当前图层
+	 */
 	hide(): void {
 		this.container.style("display", "none");
 	}
 
 	updateData(data: PointDataSource[]) {
 		this.data = data;
-		this.container.selectAll("image").remove();
+		this.baseLayer.selectAll("*").remove();
 
 		this.draw();
 	}
 
 	protected draw() {
-		this.baseLayer
-			.selectAll("image")
-			.data(this.formatData(this.data))
-			.enter()
-			.append("image")
+		const g = this.baseLayer.selectAll("g").data(this.formatData(this.data)).enter().append("g");
+
+		g.append("image")
 			.attr("xlink:href", d => d.icon)
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
@@ -159,6 +163,24 @@ class PointLayer extends Layer {
 					});
 				}
 			});
+
+		g.filter(i => {
+			if (i.name) {
+				return true;
+			} else {
+				return false;
+			}
+		})
+			.append("text")
+			.attr("x", d => d.coordinate[0])
+			.attr("y", d => d.coordinate[1])
+			.attr("transform", d => `translate(${0},${d.option.offset[1]})`)
+			.attr("font-size", 12)
+			.attr("dx", d => {
+				const width = this.calcuteTextWidth(d.name!);
+				return -width / 2;
+			})
+			.text(d => d.name!);
 	}
 
 	formatData(data: PointDataSource[]) {
@@ -173,6 +195,22 @@ class PointLayer extends Layer {
 				},
 			};
 		});
+	}
+
+	private calcuteTextWidth(text: string, fontSize = "12px") {
+		let span = document.getElementById("__getwidth");
+		if (!span) {
+			span = document.createElement("span");
+		}
+		span.id = "__getwidth";
+		span.style.visibility = "hidden";
+		span.style.fontSize = fontSize;
+		span.style.whiteSpace = "nowrap";
+		span.innerText = text;
+		document.body.appendChild(span);
+		const width = span.offsetWidth;
+		document.body.removeChild(span);
+		return width;
 	}
 }
 

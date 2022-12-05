@@ -14,6 +14,7 @@ declare class Layer {
     constructor(type: LayerType, options?: LayerOption);
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
+    updateData(data: any): void;
 }
 export type { LayerOption };
 export { Layer as default, LayerType };

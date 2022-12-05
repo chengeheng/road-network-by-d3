@@ -100,12 +100,16 @@ class PolyLineLayer extends Layer {
 		this.container.remove();
 	}
 
-	// TODO 显示当前图层
+	/**
+	 * 显示当前图层
+	 */
 	show(): void {
 		this.container.style("display", "inline");
 	}
 
-	// TODO 隐藏当前图层
+	/**
+	 * 隐藏当前图层
+	 */
 	hide(): void {
 		this.container.style("display", "none");
 	}
@@ -118,7 +122,7 @@ class PolyLineLayer extends Layer {
 		this.draw();
 	}
 
-	draw() {
+	protected draw() {
 		this.baseLayer
 			.selectAll("path")
 			.data(this.formatData(this.data))

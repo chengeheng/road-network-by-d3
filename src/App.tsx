@@ -45,6 +45,7 @@ const oldPointsData: PointDataSource[] = [
 	},
 	{
 		id: 2,
+		name: "世界茶饮",
 		coordinate: [118.391581, 31.34204],
 	},
 ];
@@ -281,6 +282,33 @@ function App() {
 					}}
 				>
 					聚焦区域
+				</button>
+				<button
+					style={{ marginLeft: "5px" }}
+					onClick={() => {
+						if (!map) return;
+						map.focusOnView(focusCoords);
+					}}
+				>
+					隐藏点图层
+				</button>
+				<button
+					style={{ marginLeft: "5px" }}
+					onClick={() => {
+						if (!map) return;
+						map.focusOnView(focusCoords);
+					}}
+				>
+					隐藏线图层
+				</button>
+				<button
+					style={{ marginLeft: "5px" }}
+					onClick={() => {
+						if (!map) return;
+						map.focusOnView(focusCoords);
+					}}
+				>
+					隐藏面图层
 				</button>
 			</div>
 		</div>
