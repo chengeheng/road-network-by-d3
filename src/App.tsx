@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 import "./App.css";
 
+import treePng from "./tree.png";
 import Map from "./map/Map";
 import PointLayer, { PointDataSource } from "./map/PointLayer";
 import PolygonLayer, { PolygonDataSource } from "./map/PolygonLayer";
@@ -34,6 +35,7 @@ const oldPointsData: PointDataSource[] = [
 		id: 1,
 		name: "金宝大酒店",
 		coordinate: [118.39053, 31.343104],
+		icon: treePng,
 		option: {
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -224,7 +226,7 @@ function App() {
 			center: [118.39053, 31.343104],
 			onClick: e => console.log(e),
 		});
-		const pointlayer = new PointLayer(oldPointsData);
+		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#b3ff00" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData);
 		map.addLayer(polylayer);
@@ -286,8 +288,8 @@ function App() {
 				<button
 					style={{ marginLeft: "5px" }}
 					onClick={() => {
-						if (!map) return;
-						map.focusOnView(focusCoords);
+						if (!pointLayer) return;
+						pointLayer.hide();
 					}}
 				>
 					隐藏点图层
@@ -295,8 +297,8 @@ function App() {
 				<button
 					style={{ marginLeft: "5px" }}
 					onClick={() => {
-						if (!map) return;
-						map.focusOnView(focusCoords);
+						if (!polyLineLayer) return;
+						polyLineLayer.hide();
 					}}
 				>
 					隐藏线图层
@@ -304,8 +306,8 @@ function App() {
 				<button
 					style={{ marginLeft: "5px" }}
 					onClick={() => {
-						if (!map) return;
-						map.focusOnView(focusCoords);
+						if (!polygonLayer) return;
+						polygonLayer.hide();
 					}}
 				>
 					隐藏面图层
