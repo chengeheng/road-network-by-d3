@@ -75,7 +75,10 @@ class PolyLineLayer extends Layer {
 	private clickTimer: NodeJS.Timeout | undefined;
 	private selectIndexs: Set<number>;
 
-	constructor(dataSource: PolyLineDataSource[], option: PolyLineLayerOption = defaultOption) {
+	constructor(
+		dataSource: PolyLineDataSource[],
+		option: PolyLineLayerOption = defaultOption
+	) {
 		super(LayerType.PolygonLayer, option);
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
@@ -83,15 +86,22 @@ class PolyLineLayer extends Layer {
 		this.selectIndexs = new Set();
 	}
 
-	init(svg: SVGGElement, projection: d3.GeoProjection) {
-		super.init(svg, projection);
+	init(g: SVGGElement, projection: d3.GeoProjection) {
+		super.init(g, projection);
 		this.path = d3.geoPath<any, any>().projection(projection);
-		this.container = d3.select(svg).append("g");
+		this.container = d3
+			.select(g)
+			.append("g")
+			.attr("id", `polyline-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
 		this.baseLayer = this.container.append("g");
-		this.selectLayer = this.container.append("g").style("pointer-events", "none");
-		this.hoverLayer = this.container.append("g").style("pointer-events", "none");
+		this.selectLayer = this.container
+			.append("g")
+			.style("pointer-events", "none");
+		this.hoverLayer = this.container
+			.append("g")
+			.style("pointer-events", "none");
 
 		this.draw();
 	}
@@ -114,8 +124,17 @@ class PolyLineLayer extends Layer {
 		this.container.style("display", "none");
 	}
 
+	enableLayerFunc(): void {
+		this.container.style("pointer-events", "inherit");
+	}
+
+	disableLayerFunc(): void {
+		this.container.style("pointer-events", "none");
+	}
+
 	updateData(data: PolyLineDataSource[]) {
 		this.data = data;
+		this.selectIndexs = new Set();
 		this.baseLayer.selectAll("path").remove();
 		this.selectLayer.selectAll("path").remove();
 		this.hoverLayer.selectAll("path").remove();
@@ -166,9 +185,9 @@ class PolyLineLayer extends Layer {
 							} else {
 								this.selectIndexs.add(index);
 							}
-							this.selectLayer.select("path").remove();
-							const selectedDatas = d.properties.originData.data.filter((_, index) =>
-								this.selectIndexs.has(index)
+							this.selectLayer.select("*").remove();
+							const selectedDatas = d.properties.originData.data.filter(
+								(_, index) => this.selectIndexs.has(index)
 							);
 							const selectedPaths = selectedDatas.reduce((pre, cur) => {
 								pre.push(cur.coordinates);

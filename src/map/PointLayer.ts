@@ -58,7 +58,10 @@ class PointLayer extends Layer {
 	private clickTimer: NodeJS.Timeout | undefined;
 	private filterIds: string[];
 
-	constructor(dataSource: PointDataSource[], option: PointLayerOption = defaultOption) {
+	constructor(
+		dataSource: PointDataSource[],
+		option: PointLayerOption = defaultOption
+	) {
 		super(LayerType.PointLayer, option);
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
@@ -73,9 +76,12 @@ class PointLayer extends Layer {
 		this.filterIds = [];
 	}
 
-	init(svg: SVGGElement, projection: d3.GeoProjection) {
-		super.init(svg, projection);
-		this.container = d3.select(svg).append("g");
+	init(g: SVGGElement, projection: d3.GeoProjection) {
+		super.init(g, projection);
+		this.container = d3
+			.select(g)
+			.append("g")
+			.attr("id", `point-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
 		this.baseLayer = this.container.append("g");
@@ -101,6 +107,14 @@ class PointLayer extends Layer {
 		this.container.style("display", "none");
 	}
 
+	enableLayerFunc(): void {
+		this.container.style("pointer-events", "inherit");
+	}
+
+	disableLayerFunc(): void {
+		this.container.style("pointer-events", "none");
+	}
+
 	updateData(data: PointDataSource[]) {
 		this.data = data;
 		// 初始化数据
@@ -120,7 +134,11 @@ class PointLayer extends Layer {
 	}
 
 	private drawWithHoverColor() {
-		const g = this.baseLayer.selectAll("g").data(this.formatData(this.data)).enter().append("g");
+		const g = this.baseLayer
+			.selectAll("g")
+			.data(this.formatData(this.data))
+			.enter()
+			.append("g");
 		const hoverColor = this.option.hoverColor!;
 		const filterMatrix = this.makeFilterMatrix(hoverColor);
 		const id = this.makeRandomId();
@@ -133,14 +151,17 @@ class PointLayer extends Layer {
 			.attr("in", "SourceGraphic")
 			.attr("type", "matrix")
 			.attr("values", filterMatrix);
-
+		this.filterIds.push(id);
 		g.append("image")
 			.attr("xlink:href", d => d.icon)
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
 			.attr("width", d => d.option.width)
 			.attr("height", d => d.option.height)
-			.attr("transform", d => `translate(${d.option.offset[0]},${d.option.offset[1]})`)
+			.attr(
+				"transform",
+				d => `translate(${d.option.offset[0]},${d.option.offset[1]})`
+			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
 					e.stopPropagation();
@@ -224,7 +245,11 @@ class PointLayer extends Layer {
 	}
 
 	private drawWithOutHoverColor() {
-		const g = this.baseLayer.selectAll("g").data(this.formatData(this.data)).enter().append("g");
+		const g = this.baseLayer
+			.selectAll("g")
+			.data(this.formatData(this.data))
+			.enter()
+			.append("g");
 
 		g.append("image")
 			.attr("filter", "url(#test)")
@@ -233,7 +258,10 @@ class PointLayer extends Layer {
 			.attr("y", d => d.coordinate[1])
 			.attr("width", d => d.option.width)
 			.attr("height", d => d.option.height)
-			.attr("transform", d => `translate(${d.option.offset[0]},${d.option.offset[1]})`)
+			.attr(
+				"transform",
+				d => `translate(${d.option.offset[0]},${d.option.offset[1]})`
+			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
 					e.stopPropagation();
@@ -322,22 +350,6 @@ class PointLayer extends Layer {
 		});
 	}
 
-	private calcuteTextWidth(text: string, fontSize = "12px") {
-		let span = document.getElementById("__getwidth");
-		if (!span) {
-			span = document.createElement("span");
-		}
-		span.id = "__getwidth";
-		span.style.visibility = "hidden";
-		span.style.fontSize = fontSize;
-		span.style.whiteSpace = "nowrap";
-		span.innerText = text;
-		document.body.appendChild(span);
-		const width = span.offsetWidth;
-		document.body.removeChild(span);
-		return width;
-	}
-
 	private makeFilterMatrix(color: string) {
 		const [r, g, b] = this.hexToRgb(color);
 		return `
@@ -357,7 +369,9 @@ class PointLayer extends Layer {
 			if (testColor.length === 4) {
 				newColor = "#";
 				for (let i = 1; i < 4; i++) {
-					newColor += testColor.slice(i, i + 1).concat(testColor.slice(i, i + 1));
+					newColor += testColor
+						.slice(i, i + 1)
+						.concat(testColor.slice(i, i + 1));
 				}
 			} else {
 				newColor = testColor;
@@ -366,22 +380,10 @@ class PointLayer extends Layer {
 			for (let i = 1; i < 7; i += 2) {
 				colorChange.push(parseInt("0x" + newColor.slice(i, i + 2)));
 			}
-			console.log(colorChange);
 			return colorChange as [number, number, number];
 		} else {
 			throw new Error("输入的颜色值必须是合法的16进制颜色");
 		}
-	}
-
-	private makeRandomId(): string {
-		const chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
-		/****默认去掉了容易混淆的字符oOLl,9gq,Vv,Uu,I1****/
-		const maxPos = chars.length;
-		let code = "";
-		for (let i = 0; i < 6; i++) {
-			code += chars.charAt(Math.floor(Math.random() * maxPos));
-		}
-		return code;
 	}
 }
 

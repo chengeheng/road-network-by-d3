@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 import "./App.css";
 
-import treePng from "./tree.png";
 import Map from "./map/Map";
 import PointLayer, { PointDataSource } from "./map/PointLayer";
 import PolygonLayer, { PolygonDataSource } from "./map/PolygonLayer";
-import PolyLineLayer, { PolyLineDataSource, StrokeLineType } from "./map/PolyLineLayer";
+import PolyLineLayer, {
+	PolyLineDataSource,
+	StrokeLineType,
+} from "./map/PolyLineLayer";
 
 const focusCoords: [number, number][] = [
 	[118.391213, 31.343501],
@@ -25,6 +27,7 @@ const focusPolygonsData: PolygonDataSource = {
 	option: {
 		strokeColor: "#ffd000",
 		strokeWidth: 0.5,
+		selectable: true,
 		fillColor: "#ffd000",
 		hoverColor: "#b3ff00",
 	},
@@ -35,7 +38,6 @@ const oldPointsData: PointDataSource[] = [
 		id: 1,
 		name: "金宝大酒店",
 		coordinate: [118.39053, 31.343104],
-		icon: treePng,
 		option: {
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -49,6 +51,14 @@ const oldPointsData: PointDataSource[] = [
 		id: 2,
 		name: "世界茶饮",
 		coordinate: [118.391581, 31.34204],
+		option: {
+			stopPropagation: true,
+			onClick: (e: any) => {
+				console.log("pointEvent", e);
+			},
+			onDbClick: (e: any) => console.log("point double click", e),
+			onRightClick: (e: any) => console.log("point right click", e),
+		},
 	},
 ];
 const oldPolyLinesData: PolyLineDataSource[] = [
@@ -113,6 +123,11 @@ const oldPolygonsData: PolygonDataSource[] = [
 					[118.391729, 31.342136],
 					[118.391662, 31.342664],
 				],
+				name: "广场A",
+				nameStyle: {
+					fontSize: 23,
+					fontWeight: 600,
+				},
 			},
 		],
 		option: {
@@ -224,7 +239,7 @@ function App() {
 	useEffect(() => {
 		const map = new Map("container", {
 			center: [118.39053, 31.343104],
-			onClick: e => console.log(e),
+			onClick: e => console.log("click map", e),
 		});
 		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#b3ff00" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
@@ -238,80 +253,129 @@ function App() {
 		setMap(map);
 	}, []);
 
+	const buttons = [
+		{
+			label: "更新点数据",
+			onClick: () => {
+				if (!pointLayer) return;
+				pointLayer.updateData(newPointsData);
+			},
+		},
+		{
+			label: "更新线数据",
+			onClick: () => {
+				if (!polyLineLayer) return;
+				polyLineLayer.updateData(newPolyLinesData);
+			},
+		},
+		{
+			label: "更新面数据",
+			onClick: () => {
+				if (!polygonLayer) return;
+				polygonLayer.updateData(newPolygonsData);
+			},
+		},
+		{
+			label: "更换地图中心点",
+			onClick: () => {
+				if (!map) return;
+				map.moveTo([118.391581, 31.34204]);
+			},
+		},
+		{
+			label: "聚焦区域",
+			onClick: () => {
+				if (!map) return;
+				map.focusOnView(focusCoords);
+			},
+		},
+		{
+			label: "隐藏点图层",
+			onClick: () => {
+				if (!pointLayer) return;
+				pointLayer.hide();
+			},
+		},
+		{
+			label: "隐藏线图层",
+			onClick: () => {
+				if (!polyLineLayer) return;
+				polyLineLayer.hide();
+			},
+		},
+		{
+			label: "隐藏面图层",
+			onClick: () => {
+				if (!polygonLayer) return;
+				polygonLayer.hide();
+			},
+		},
+		{
+			label: "显示所有图层",
+			onClick: () => {
+				if (!map) return;
+				map.showLayer();
+			},
+		},
+		{
+			label: "隐藏所有图层",
+			onClick: () => {
+				if (!map) return;
+				map.hideLayer();
+			},
+		},
+		{
+			label: "隐藏点图层所有功能",
+			onClick: () => {
+				if (!pointLayer) return;
+				pointLayer.disableLayerFunc();
+			},
+		},
+		{
+			label: "恢复点图层所有功能",
+			onClick: () => {
+				if (!pointLayer) return;
+				pointLayer.enableLayerFunc();
+			},
+		},
+		{
+			label: "隐藏线图层所有功能",
+			onClick: () => {
+				if (!polyLineLayer) return;
+				polyLineLayer.disableLayerFunc();
+			},
+		},
+		{
+			label: "恢复线图层所有功能",
+			onClick: () => {
+				if (!polyLineLayer) return;
+				polyLineLayer.enableLayerFunc();
+			},
+		},
+		{
+			label: "隐藏面图层所有功能",
+			onClick: () => {
+				if (!polygonLayer) return;
+				polygonLayer.disableLayerFunc();
+			},
+		},
+		{
+			label: "恢复面图层所有功能",
+			onClick: () => {
+				if (!polygonLayer) return;
+				polygonLayer.enableLayerFunc();
+			},
+		},
+	];
+
 	return (
 		<div className="App" id="container">
 			<div style={{ position: "absolute", zIndex: 10, top: 10, left: 10 }}>
-				<button
-					onClick={() => {
-						if (!pointLayer) return;
-						pointLayer.updateData(newPointsData);
-					}}
-				>
-					更新点数据
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!polyLineLayer) return;
-						polyLineLayer.updateData(newPolyLinesData);
-					}}
-				>
-					更新线数据
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!polygonLayer) return;
-						polygonLayer.updateData(newPolygonsData);
-					}}
-				>
-					更新面数据
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!map) return;
-						map.moveTo([118.391581, 31.34204]);
-					}}
-				>
-					更换地图中心点
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!map) return;
-						map.focusOnView(focusCoords);
-					}}
-				>
-					聚焦区域
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!pointLayer) return;
-						pointLayer.hide();
-					}}
-				>
-					隐藏点图层
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!polyLineLayer) return;
-						polyLineLayer.hide();
-					}}
-				>
-					隐藏线图层
-				</button>
-				<button
-					style={{ marginLeft: "5px" }}
-					onClick={() => {
-						if (!polygonLayer) return;
-						polygonLayer.hide();
-					}}
-				>
-					隐藏面图层
-				</button>
+				{buttons.map((i, index) => (
+					<button key={index + 1} className="button" onClick={i.onClick}>
+						{i.label}
+					</button>
+				))}
 			</div>
 		</div>
 	);

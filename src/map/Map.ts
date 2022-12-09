@@ -28,6 +28,7 @@ class Map {
 	private options: MapOptionType;
 	private zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
 	private zoomLevel: number;
+	private defaultConfig: object;
 
 	private layers: Layer[];
 
@@ -40,6 +41,7 @@ class Map {
 		this.height = 0;
 		this.layers = [];
 		this.zoomLevel = 1;
+		this.defaultConfig = {};
 
 		this.projection = d3.geoMercator();
 
@@ -65,7 +67,9 @@ class Map {
 				const rect = container.getBoundingClientRect();
 				this.width = rect.width;
 				this.height = rect.height;
-				d3.select(this.svg).attr("width", rect.width).attr("height", rect.height);
+				d3.select(this.svg)
+					.attr("width", rect.width)
+					.attr("height", rect.height);
 			});
 			resizeObserver.observe(container);
 		}
@@ -92,21 +96,18 @@ class Map {
 			.zoom<SVGSVGElement, unknown>()
 			.scaleExtent([1 / 5, 5])
 			// .wheelDelta(event => {
-			// 	console.log(event, event.deltaY, event.deltaMode);
-			// 	return -event.deltaY * (event.deltaMode === 1 ? 0.5 : event.deltaMode ? 1 : 0.02);
+			// 	if (event.deltaY < 0) {
+			// 		if (this.zoomLevel === 5) return Math.log2(1);
+			// 		this.zoomLevel = this.zoomLevel + 0.5;
+			// 		return Math.log2(1 + 0.5 / (this.zoomLevel - 0.5));
+			// 	} else {
+			// 		if (this.zoomLevel === 0.5) return Math.log2(1);
+			// 		this.zoomLevel = this.zoomLevel - 0.5;
+			// 		return Math.log2(1 - 0.5 / (this.zoomLevel + 0.5));
+			// 	}
 			// })
 			.on("zoom", e => {
-				// console.log(e);
-				// if (e?.sourceEvent?.type === "wheel") {
-				// 	if (e.sourceEvent.wheelDelta > 0) {
-				// 		console.log(this.zoomLevel);
-				// 		this.zoom.scaleTo(svg, this.zoomLevel++);
-				// 	} else {
-				// 		this.zoom.scaleTo(svg, this.zoomLevel--);
-				// 	}
-				// } else {
 				g.attr("transform", e.transform);
-				// }
 			});
 		this.zoom = zoom;
 		zoom.scaleBy(svg, this.zoomLevel);
@@ -120,12 +121,18 @@ class Map {
 			})
 			.on("dblclick.zoom", null);
 	}
-
+	/**
+	 * 添加图层
+	 * @param layer 图层实例
+	 */
 	addLayer(layer: Layer) {
 		this.layers.push(layer);
 		layer.init(this.map, this.projection);
 	}
-
+	/**
+	 * 删除图层
+	 * @param layer 图层实例
+	 */
 	removeLayer(layer: Layer) {
 		for (let i = 0; i < this.layers.length; i++) {
 			if (this.layers[i] === layer) {
@@ -134,10 +141,28 @@ class Map {
 		}
 		layer.remove();
 	}
-	// TODO 显示隐藏的layer
-	showLayer() {}
-	// TODO 隐藏layer
-	hideLayer() {}
+	/**
+	 * 显示指定的或所有隐藏的图层
+	 * @param layer 图层
+	 */
+	showLayer(layer?: Layer) {
+		if (layer === undefined) {
+			this.layers.forEach(i => i.show());
+		} else {
+			layer.show();
+		}
+	}
+	/**
+	 * 隐藏指定的或所有图层
+	 * @param layer 图层
+	 */
+	hideLayer(layer?: Layer) {
+		if (layer === undefined) {
+			this.layers.forEach(i => i.hide());
+		} else {
+			layer.show();
+		}
+	}
 
 	/**
 	 * 移动到指定点位
@@ -164,29 +189,26 @@ class Map {
 		if (projectionCoords.length === 0) {
 			return;
 		}
-		const min: [number, number] = [projectionCoords[0][0], projectionCoords[0][1]];
-		const max: [number, number] = [projectionCoords[0][0], projectionCoords[0][1]];
-		projectionCoords.forEach(i => {
-			if (i[0] < min[0]) {
-				min[0] = i[0];
-			}
-			if (i[1] < min[1]) {
-				min[1] = i[1];
-			}
-			if (i[0] > max[0]) {
-				max[0] = i[0];
-			}
-			if (i[1] > max[1]) {
-				max[1] = i[1];
-			}
-		});
+		const min: number[] = [];
+		const max: number[] = [];
+		[min[0], max[0]] = d3.extent(projectionCoords, d => d[0]) as [
+			number,
+			number
+		];
+		[min[1], max[1]] = d3.extent(projectionCoords, d => d[1]) as [
+			number,
+			number
+		];
+
 		const xScale = (max[0] - min[0]) / this.width;
 		const yScale = (max[1] - min[1]) / this.height;
 		const middle: [number, number] = this.projection.invert!([
 			(max[0] + min[0]) / 2,
 			(max[1] + min[1]) / 2,
 		]) as [number, number];
-		const scale = Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
+
+		const scale =
+			Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
 		if (scale < 1 / 2) {
 			this.moveTo(middle, 0.5);
 		} else if (scale > 5) {
