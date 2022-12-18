@@ -48,6 +48,7 @@ class Layer {
 	}
 
 	protected calcuteTextWidth(text: string, fontSize = "12px") {
+		console.log(text, fontSize);
 		let span = document.getElementById("__getwidth");
 		if (!span) {
 			span = document.createElement("span");
@@ -59,8 +60,9 @@ class Layer {
 		span.innerText = text;
 		document.body.appendChild(span);
 		const width = span.offsetWidth;
+		const height = span.offsetHeight;
 		document.body.removeChild(span);
-		return width;
+		return [width, height];
 	}
 }
 

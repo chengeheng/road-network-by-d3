@@ -5,6 +5,7 @@ interface PointLayerOption extends LayerOption {
     width?: number;
     height?: number;
     offset?: [number, number];
+    hoverColor?: string;
     stopPropagation?: boolean;
     onClick?: Function;
     onRightClick?: Function;
@@ -34,8 +35,10 @@ declare class PointLayer extends Layer {
     baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     private clickCount;
     private clickTimer;
+    private filterIds;
     constructor(dataSource: PointDataSource[], option?: PointLayerOption);
-    init(svg: SVGGElement, projection: d3.GeoProjection): void;
+    private initState;
+    init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     /**
      * 显示当前图层
@@ -45,25 +48,15 @@ declare class PointLayer extends Layer {
      * 隐藏当前图层
      */
     hide(): void;
+    enableLayerFunc(): void;
+    disableLayerFunc(): void;
     updateData(data: PointDataSource[]): void;
     protected draw(): void;
-    formatData(data: PointDataSource[]): {
-        coordinate: [number, number];
-        icon: string;
-        option: {
-            icon: string;
-            width: number;
-            height: number;
-            offset: [number, number];
-            stopPropagation: boolean;
-            onClick: Function;
-            onRightClick: Function;
-            onDbClick: Function;
-        };
-        id: string | number;
-        name?: string | undefined;
-    }[];
-    private calcuteTextWidth;
+    private drawWithHoverColor;
+    private drawWithOutHoverColor;
+    private formatData;
+    private makeFilterMatrix;
+    private hexToRgb;
 }
 export type { PointDataSource };
 export default PointLayer;

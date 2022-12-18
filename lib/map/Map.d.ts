@@ -16,14 +16,31 @@ declare class Map {
     private options;
     private zoom;
     private zoomLevel;
+    private defaultConfig;
     private layers;
     projection: d3.GeoProjection;
     constructor(id: string, options?: MapOption);
     private init;
+    /**
+     * 添加图层
+     * @param layer 图层实例
+     */
     addLayer(layer: Layer): void;
+    /**
+     * 删除图层
+     * @param layer 图层实例
+     */
     removeLayer(layer: Layer): void;
-    showLayer(): void;
-    hideLayer(): void;
+    /**
+     * 显示指定的或所有隐藏的图层
+     * @param layer 图层
+     */
+    showLayer(layer?: Layer): void;
+    /**
+     * 隐藏指定的或所有图层
+     * @param layer 图层
+     */
+    hideLayer(layer?: Layer): void;
     /**
      * 移动到指定点位
      * @param coord 点位bd09坐标

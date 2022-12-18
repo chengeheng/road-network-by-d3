@@ -10,6 +10,8 @@ import PolyLineLayer, {
 	StrokeLineType,
 } from "./map/PolyLineLayer";
 
+import TreePng from "./tree.png";
+
 const focusCoords: [number, number][] = [
 	[118.391213, 31.343501],
 	[118.39137, 31.343408],
@@ -39,6 +41,8 @@ const oldPointsData: PointDataSource[] = [
 		name: "金宝大酒店",
 		coordinate: [118.39053, 31.343104],
 		option: {
+			icon: TreePng,
+			rotate: 30,
 			stopPropagation: true,
 			onClick: (e: any) => {
 				console.log("pointEvent", e);
@@ -125,8 +129,10 @@ const oldPolygonsData: PolygonDataSource[] = [
 				],
 				name: "广场A",
 				nameStyle: {
-					fontSize: 23,
+					fontSize: 24,
 					fontWeight: 600,
+					color: "red",
+					rotate: 50,
 				},
 			},
 		],
@@ -241,7 +247,7 @@ function App() {
 			center: [118.39053, 31.343104],
 			onClick: e => console.log("click map", e),
 		});
-		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#b3ff00" });
+		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#28B9F0" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData);
 		map.addLayer(polylayer);

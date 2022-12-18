@@ -15,6 +15,12 @@ declare class Layer {
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     updateData(data: any): void;
+    show(): void;
+    hide(): void;
+    enableLayerFunc(): void;
+    disableLayerFunc(): void;
+    protected makeRandomId(): string;
+    protected calcuteTextWidth(text: string, fontSize?: string): number;
 }
 export type { LayerOption };
 export { Layer as default, LayerType };

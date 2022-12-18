@@ -64,12 +64,14 @@ interface NameStyleProps {
 	color?: string;
 	fontWeight?: string | number;
 	fontSize?: number;
+	rotate?: number;
 }
 
 interface DefaultNameDataProps extends NameStyleProps {
 	color: string;
 	fontWeight: string | number;
 	fontSize: number;
+	rotate: number;
 }
 interface NameDataProps extends DefaultNameDataProps {
 	name: string;
@@ -111,6 +113,7 @@ const defaultNameStyle: DefaultNameDataProps = {
 	fontSize: 14,
 	fontWeight: 400,
 	color: "#333333",
+	rotate: 0,
 };
 
 class PolygonLayer extends Layer {
@@ -334,6 +337,7 @@ class PolygonLayer extends Layer {
 					});
 				}
 			});
+
 		nameGroup
 			.selectAll("text")
 			.data(nameData)
@@ -343,11 +347,14 @@ class PolygonLayer extends Layer {
 			.attr("y", d => d.coordinate[1])
 			.attr("font-size", d => d.fontSize)
 			.attr("fill", d => d.color)
+			.style("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.attr(
+				"transform",
+				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
+			)
 			.attr("font-weight", d => d.fontWeight)
-			.attr("dx", d => {
-				const width = this.calcuteTextWidth(d.name);
-				return -width / 2;
-			})
+
 			.text(d => d.name);
 	}
 
@@ -412,10 +419,12 @@ class PolygonLayer extends Layer {
 			.attr("font-size", d => d.fontSize)
 			.attr("fill", d => d.color)
 			.attr("font-weight", d => d.fontWeight)
-			.attr("dx", d => {
-				const width = this.calcuteTextWidth(d.name);
-				return -width / 2;
-			})
+			.style("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.attr(
+				"transform",
+				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
+			)
 			.text(d => d.name);
 	}
 
@@ -454,10 +463,12 @@ class PolygonLayer extends Layer {
 			.attr("font-size", d => d.fontSize)
 			.attr("fill", d => d.color)
 			.attr("font-weight", d => d.fontWeight)
-			.attr("dx", d => {
-				const width = this.calcuteTextWidth(d.name);
-				return -width / 2;
-			})
+			.style("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.attr(
+				"transform",
+				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
+			)
 			.text(d => d.name);
 	}
 
@@ -481,15 +492,20 @@ class PolygonLayer extends Layer {
 				coordinates.push(j.coordinates);
 				if (j.name) {
 					const nameStyle = {
-						...j.nameStyle,
 						...defaultNameStyle,
+						...j.nameStyle,
 					};
+
+					const coordinate = this.projection(
+						d3.polygonCentroid(j.coordinates)
+					)!;
 					nameData.push({
 						name: j.name,
 						fontSize: nameStyle.fontSize,
 						fontWeight: nameStyle.fontWeight,
 						color: nameStyle.color,
-						coordinate: this.projection(d3.polygonCentroid(j.coordinates))!,
+						coordinate,
+						rotate: nameStyle.rotate,
 					});
 				}
 				if (j.reverseCoords) {

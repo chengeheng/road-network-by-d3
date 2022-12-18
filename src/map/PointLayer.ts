@@ -7,6 +7,7 @@ interface PointLayerOption extends LayerOption {
 	width?: number;
 	height?: number;
 	offset?: [number, number];
+	rotate?: number;
 	hoverColor?: string;
 
 	stopPropagation?: boolean;
@@ -20,6 +21,7 @@ interface PointOption extends PointLayerOption {
 	width: number;
 	height: number;
 	offset: [number, number];
+	rotate: number;
 
 	stopPropagation: boolean;
 	onClick: Function;
@@ -39,7 +41,8 @@ const defaultOption: PointOption = {
 	icon: PointSvg,
 	width: 36,
 	height: 36,
-	offset: [-18, -36],
+	offset: [0, 0],
+	rotate: 0,
 
 	stopPropagation: false,
 	onClick: () => {},
@@ -148,19 +151,19 @@ class PointLayer extends Layer {
 			.append("filter")
 			.attr("id", id)
 			.append("feColorMatrix")
-			.attr("in", "SourceGraphic")
 			.attr("type", "matrix")
 			.attr("values", filterMatrix);
 		this.filterIds.push(id);
 		g.append("image")
 			.attr("xlink:href", d => d.icon)
-			.attr("x", d => d.coordinate[0])
-			.attr("y", d => d.coordinate[1])
+			.attr("x", d => d.imageLeftTop[0])
+			.attr("y", d => d.imageLeftTop[1])
 			.attr("width", d => d.option.width)
 			.attr("height", d => d.option.height)
 			.attr(
 				"transform",
-				d => `translate(${d.option.offset[0]},${d.option.offset[1]})`
+				d =>
+					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
 			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
@@ -235,12 +238,12 @@ class PointLayer extends Layer {
 			.append("text")
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
-			.attr("transform", d => `translate(${0},${d.option.offset[1]})`)
+			.attr(
+				"transform",
+				d => `translate(${0},${d.option.offset[1] - d.option.height})`
+			)
+			.style("text-anchor", "middle")
 			.attr("font-size", 12)
-			.attr("dx", d => {
-				const width = this.calcuteTextWidth(d.name!);
-				return -width / 2;
-			})
 			.text(d => d.name!);
 	}
 
@@ -252,15 +255,15 @@ class PointLayer extends Layer {
 			.append("g");
 
 		g.append("image")
-			.attr("filter", "url(#test)")
 			.attr("xlink:href", d => d.icon)
-			.attr("x", d => d.coordinate[0])
-			.attr("y", d => d.coordinate[1])
+			.attr("x", d => d.imageLeftTop[0])
+			.attr("y", d => d.imageLeftTop[1])
 			.attr("width", d => d.option.width)
 			.attr("height", d => d.option.height)
 			.attr(
 				"transform",
-				d => `translate(${d.option.offset[0]},${d.option.offset[1]})`
+				d =>
+					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
 			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
@@ -327,25 +330,36 @@ class PointLayer extends Layer {
 			.append("text")
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
-			.attr("transform", d => `translate(${0},${d.option.offset[1]})`)
+			.style("text-anchor", "middle")
+			.attr(
+				"transform",
+				d => `translate(${0},${d.option.offset[1] - d.option.height})`
+			)
 			.attr("font-size", 12)
-			.attr("dx", d => {
-				const width = this.calcuteTextWidth(d.name!);
-				return -width / 2;
-			})
 			.text(d => d.name!);
 	}
 
 	private formatData(data: PointDataSource[]) {
 		return data.map(i => {
+			const option = { ...this.option, ...i.option };
+			const coordinate = this.projection(i.coordinate)!;
+			const width = option.width;
+			const height = option.height;
+			const imageCenter: [number, number] = [
+				coordinate[0],
+				coordinate[1] - height / 2,
+			];
+			const imageLeftTop: [number, number] = [
+				coordinate[0] - width / 2,
+				coordinate[1] - height,
+			];
 			return {
 				...i,
-				coordinate: this.projection(i.coordinate)!,
-				icon: i.icon ?? this.option.icon,
-				option: {
-					...this.option,
-					...i.option,
-				},
+				coordinate: coordinate,
+				icon: i.icon ?? i.option?.icon ?? this.option.icon,
+				option: option,
+				imageCenter,
+				imageLeftTop,
 			};
 		});
 	}
@@ -353,9 +367,9 @@ class PointLayer extends Layer {
 	private makeFilterMatrix(color: string) {
 		const [r, g, b] = this.hexToRgb(color);
 		return `
-		0 0 0 ${r} 0
-		0 0 0 ${g} 0
-		0 0 0 ${b} 0 
+		0 0 0 0 ${r / 255} 
+		0 0 0 0 ${g / 255} 
+		0 0 0 0 ${b / 255}  
 		0 0 0 1 0
 	`;
 	}

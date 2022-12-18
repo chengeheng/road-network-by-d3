@@ -52,7 +52,7 @@ declare class PolyLineLayer extends Layer {
     private clickTimer;
     private selectIndexs;
     constructor(dataSource: PolyLineDataSource[], option?: PolyLineLayerOption);
-    init(svg: SVGGElement, projection: d3.GeoProjection): void;
+    init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     /**
      * 显示当前图层
@@ -62,6 +62,8 @@ declare class PolyLineLayer extends Layer {
      * 隐藏当前图层
      */
     hide(): void;
+    enableLayerFunc(): void;
+    disableLayerFunc(): void;
     updateData(data: PolyLineDataSource[]): void;
     protected draw(): void;
     drawSelectLayer(coords: [number, number][][], properties: {
