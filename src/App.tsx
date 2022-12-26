@@ -282,7 +282,7 @@ function App() {
 			},
 		},
 		{
-			label: "更换地图中心点",
+			label: "聚焦点",
 			onClick: () => {
 				if (!map) return;
 				map.moveTo([118.391581, 31.34204]);
@@ -370,6 +370,20 @@ function App() {
 			onClick: () => {
 				if (!polygonLayer) return;
 				polygonLayer.enableLayerFunc();
+			},
+		},
+		{
+			label: "选中所有面",
+			onClick: () => {
+				if (!polygonLayer) return;
+				polygonLayer.setSelectType("all");
+			},
+		},
+		{
+			label: "选中路段面",
+			onClick: () => {
+				if (!polygonLayer) return;
+				polygonLayer.setSelectType("path");
 			},
 		},
 	];

@@ -36,6 +36,7 @@ interface PolygonLayerOption extends LayerOption {
 	onClick?: Function;
 	onRightClick?: Function;
 	onDbClick?: Function;
+	selectType?: "link" | "path" | "all";
 }
 
 interface PolygonOption extends PolygonLayerOption {
@@ -53,6 +54,7 @@ interface PolygonOption extends PolygonLayerOption {
 	onClick: Function;
 	onRightClick: Function;
 	onDbClick: Function;
+	selectType: "link" | "path" | "all";
 }
 
 interface PolygonDataSource {
@@ -107,6 +109,7 @@ const defaultOption: PolygonOption = {
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
+	selectType: "link",
 };
 
 const defaultNameStyle: DefaultNameDataProps = {
@@ -121,7 +124,7 @@ class PolygonLayer extends Layer {
 	option: PolygonOption;
 	path!: d3.GeoPath<any, any>;
 	isHided: boolean;
-	nameData: NameDataProps[];
+	length: number;
 
 	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -130,6 +133,8 @@ class PolygonLayer extends Layer {
 	private clickCount: number;
 	private clickTimer: NodeJS.Timeout | undefined;
 	private selectIndex: Map<number, Set<number>>; // 选中的pathIndex
+	private _selectType: "link" | "path" | "all"; // 选中的类型
+	private _allIndex: Map<number, Set<number>>; // 全部的index
 
 	constructor(
 		dataSource: PolygonDataSource[],
@@ -141,7 +146,9 @@ class PolygonLayer extends Layer {
 		this.clickCount = 0;
 		this.selectIndex = new Map();
 		this.isHided = false;
-		this.nameData = [];
+		this.length = dataSource.length;
+		this._selectType = this.option.selectType;
+		this._allIndex = new Map();
 	}
 
 	init(g: SVGGElement, projection: d3.GeoProjection) {
@@ -202,8 +209,22 @@ class PolygonLayer extends Layer {
 		this.draw();
 	}
 
+	setSelectType(type: "link" | "path" | "all"): void {
+		this._selectType = type;
+	}
+
 	protected draw() {
-		const [pathData, nameData] = this.formatData(this.data);
+		const [pathData, nameData] = this.formatData(
+			this.data,
+			(e, outerIndex, innerIndex) => {
+				if (this._allIndex.has(outerIndex)) {
+					this._allIndex.get(outerIndex)?.add(innerIndex);
+				} else {
+					this._allIndex.set(outerIndex, new Set<number>([innerIndex]));
+				}
+				return true;
+			}
+		);
 		const pathGroup = this.baseLayer.append("g");
 		const nameGroup = this.baseLayer
 			.append("g")
@@ -239,7 +260,14 @@ class PolygonLayer extends Layer {
 				const index = coordinates.findIndex(i =>
 					d3.polygonContains(i, targetCoord!)
 				);
-				const originalParams = originData?.data[index];
+				let originalParams: any;
+				if (this._selectType === "all") {
+					originalParams = this.data;
+				} else if (this._selectType === "path") {
+					originalParams = d.properties.originData;
+				} else {
+					originalParams = originData?.data[index];
+				}
 				clearTimeout(this.clickTimer);
 				this.clickTimer = setTimeout(() => {
 					if (this.clickCount % 2 === 1) {
@@ -247,7 +275,11 @@ class PolygonLayer extends Layer {
 						const clickFn = d.properties.option.onClick;
 						const selectable = d.properties.option.selectable;
 						if (selectable) {
-							this.combineIndex(this.selectIndex, d.properties.index, index);
+							this.selectIndex = this.combineIndex(
+								this.selectIndex,
+								d.properties.index,
+								index
+							);
 							this.selectLayer.select("*").remove();
 							this.drawSelectLayer();
 						}
@@ -299,7 +331,18 @@ class PolygonLayer extends Layer {
 						const hoverData = this.formatData(
 							this.data,
 							(e, outerIndex, innerIndex) => {
-								if (outerIndex === d.properties.index && innerIndex === index) {
+								if (this._selectType === "all") return true;
+								if (
+									this._selectType === "path" &&
+									outerIndex === d.properties.index
+								)
+									return true;
+
+								if (
+									this._selectType === "link" &&
+									outerIndex === d.properties.index &&
+									innerIndex === index
+								) {
 									return true;
 								}
 								return false;
@@ -310,7 +353,7 @@ class PolygonLayer extends Layer {
 				}
 			})
 			.on("mouseleave", () => {
-				this.hoverLayer.select("*").remove();
+				this.hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {
 				const targetCoord = this.projection.invert!(
@@ -320,7 +363,14 @@ class PolygonLayer extends Layer {
 					d3.polygonContains(i, targetCoord!)
 				);
 
-				const originalParams = d.properties.originData?.data[index];
+				let originalParams: any;
+				if (this._selectType === "all") {
+					originalParams = this.data;
+				} else if (this._selectType === "path") {
+					originalParams = d.properties.originData;
+				} else {
+					originalParams = d.properties.originData?.data[index];
+				}
 				const rightClickFn = d.properties.option.onRightClick;
 				if (rightClickFn) {
 					rightClickFn({
@@ -360,23 +410,59 @@ class PolygonLayer extends Layer {
 
 	private combineIndex<T extends Map<number, Set<number>>>(
 		idxs: T,
-		index: number,
-		idx: number
+		index: number, // 外部index
+		idx: number // 内部index
 	): T {
-		if (idxs.has(index)) {
-			const temp = idxs.get(index)!;
-			if (temp.has(idx)) {
-				temp.delete(idx);
-				if (temp.size <= 0) {
-					idxs.delete(index);
+		switch (this._selectType) {
+			case "all": {
+				if (idxs.size === this.length) {
+					idxs = new Map<number, Set<number>>() as T;
+				} else {
+					idxs = this._allIndex as T;
 				}
-			} else {
-				idxs.get(index)?.add(idx);
+				return idxs;
 			}
-		} else {
-			idxs.set(index, new Set([idx]) as Set<number>);
+			case "path": {
+				if (idxs.has(index)) {
+					idxs.delete(index);
+				} else {
+					idxs.set(index, new Set(this._allIndex.get(index)));
+				}
+				return idxs;
+			}
+			case "link": {
+				if (idxs.has(index)) {
+					const temp = idxs.get(index)!;
+					if (temp.has(idx)) {
+						temp.delete(idx);
+						if (temp.size <= 0) {
+							idxs.delete(index);
+						}
+					} else {
+						idxs.get(index)?.add(idx);
+					}
+				} else {
+					idxs.set(index, new Set([idx]) as Set<number>);
+				}
+				return idxs;
+			}
+			default: {
+				if (idxs.has(index)) {
+					const temp = idxs.get(index)!;
+					if (temp.has(idx)) {
+						temp.delete(idx);
+						if (temp.size <= 0) {
+							idxs.delete(index);
+						}
+					} else {
+						idxs.get(index)?.add(idx);
+					}
+				} else {
+					idxs.set(index, new Set([idx]) as Set<number>);
+				}
+				return idxs;
+			}
 		}
-		return idxs;
 	}
 
 	private drawSelectLayer() {

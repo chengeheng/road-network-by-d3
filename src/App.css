@@ -5,8 +5,9 @@
 
 .button {
 	width: auto;
+	margin: 5px 5px 5px 0;
 }
 
-.button:not(:first-child) {
+/* .button:not(:first-child) {
 	margin-left: 5px;
-}
+} */
