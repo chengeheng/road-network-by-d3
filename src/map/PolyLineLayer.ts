@@ -25,6 +25,7 @@ interface PolyLineLayerOption extends LayerOption {
 	onClick?: Function;
 	onRightClick?: Function;
 	onDbClick?: Function;
+	selectType?: "link" | "path" | "all";
 }
 
 interface PolyLineOption extends PolyLineLayerOption {
@@ -40,6 +41,7 @@ interface PolyLineOption extends PolyLineLayerOption {
 	onClick: Function;
 	onRightClick: Function;
 	onDbClick: Function;
+	selectType: "link" | "path" | "all";
 }
 
 interface PolyLineDataSource {
@@ -60,12 +62,14 @@ const defaultOption: PolyLineOption = {
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
+	selectType: "link",
 };
 
 class PolyLineLayer extends Layer {
 	data: PolyLineDataSource[];
 	option: PolyLineOption;
 	path!: d3.GeoPath<any, any>;
+	length: number;
 
 	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -73,7 +77,9 @@ class PolyLineLayer extends Layer {
 
 	private clickCount: number;
 	private clickTimer: NodeJS.Timeout | undefined;
-	private selectIndexs: Set<number>;
+	private selectIndex: Map<number, Set<number>>;
+	private _selectType: "link" | "path" | "all"; // 选中的类型
+	private _allIndex: Map<number, Set<number>>; // 全部的index
 
 	constructor(
 		dataSource: PolyLineDataSource[],
@@ -83,7 +89,10 @@ class PolyLineLayer extends Layer {
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
 		this.clickCount = 0;
-		this.selectIndexs = new Set();
+		this.selectIndex = new Map();
+		this._selectType = this.option.selectType;
+		this._allIndex = new Map();
+		this.length = dataSource.length;
 	}
 
 	init(g: SVGGElement, projection: d3.GeoProjection) {
@@ -134,17 +143,30 @@ class PolyLineLayer extends Layer {
 
 	updateData(data: PolyLineDataSource[]) {
 		this.data = data;
-		this.selectIndexs = new Set();
+		this.selectIndex = new Map();
 		this.baseLayer.selectAll("path").remove();
 		this.selectLayer.selectAll("path").remove();
 		this.hoverLayer.selectAll("path").remove();
 		this.draw();
 	}
 
+	setSelectType(type: "link" | "path" | "all"): void {
+		this._selectType = type;
+	}
+
 	protected draw() {
 		this.baseLayer
 			.selectAll("path")
-			.data(this.formatData(this.data))
+			.data(
+				this.formatData(this.data, (e, outerIndex, innerIndex) => {
+					if (this._allIndex.has(outerIndex)) {
+						this._allIndex.get(outerIndex)?.add(innerIndex);
+					} else {
+						this._allIndex.set(outerIndex, new Set<number>([innerIndex]));
+					}
+					return true;
+				})
+			)
 			.enter()
 			.append("path")
 			.attr("d", this.path)
@@ -172,7 +194,14 @@ class PolyLineLayer extends Layer {
 						d.properties.option.strokeWidth
 					)
 				);
-				const originalParams = originData?.data[index];
+				let originalParams: any;
+				if (this._selectType === "all") {
+					originalParams = this.data;
+				} else if (this._selectType === "path") {
+					originalParams = d.properties.originData;
+				} else {
+					originalParams = originData?.data[index];
+				}
 				clearTimeout(this.clickTimer);
 				this.clickTimer = setTimeout(() => {
 					if (this.clickCount % 2 === 1) {
@@ -180,21 +209,13 @@ class PolyLineLayer extends Layer {
 						const clickFn = d.properties.option.onClick;
 						const selectable = d.properties.option.selectable;
 						if (selectable) {
-							if (this.selectIndexs.has(index)) {
-								this.selectIndexs.delete(index);
-							} else {
-								this.selectIndexs.add(index);
-							}
-							this.selectLayer.select("*").remove();
-							const selectedDatas = d.properties.originData.data.filter(
-								(_, index) => this.selectIndexs.has(index)
+							this.selectIndex = this.combineIndex(
+								this.selectIndex,
+								d.properties.index,
+								index
 							);
-							const selectedPaths = selectedDatas.reduce((pre, cur) => {
-								pre.push(cur.coordinates);
-								return pre;
-							}, [] as [number, number][][]);
-
-							this.drawSelectLayer(selectedPaths, d.properties);
+							this.selectLayer.select("*").remove();
+							this.drawSelectLayer();
 						}
 						if (clickFn) {
 							clickFn({
@@ -203,7 +224,9 @@ class PolyLineLayer extends Layer {
 								target: {
 									index,
 									data: originalParams,
-									selected: this.selectIndexs.has(index),
+									selected: this.selectIndex.get(d.properties.index)
+										? this.selectIndex.get(d.properties.index)!.has(index)
+										: false,
 								},
 								originData,
 							});
@@ -218,7 +241,9 @@ class PolyLineLayer extends Layer {
 								target: {
 									index,
 									data: originalParams,
-									selected: this.selectIndexs.has(index),
+									selected: this.selectIndex.get(d.properties.index)
+										? this.selectIndex.get(d.properties.index)!.has(index)
+										: false,
 								},
 								originData,
 							});
@@ -237,6 +262,12 @@ class PolyLineLayer extends Layer {
 							this.projection,
 							d.properties.option.strokeWidth
 						)
+					);
+
+					this.hoverIndex = this.combineIndex(
+						this.selectIndex,
+						d.properties.index,
+						index
 					);
 
 					if (index > -1) {
@@ -261,7 +292,14 @@ class PolyLineLayer extends Layer {
 						d.properties.option.strokeWidth
 					)
 				);
-				const originalParams = d.properties.originData?.data[index];
+				let originalParams: any;
+				if (this._selectType === "all") {
+					originalParams = this.data;
+				} else if (this._selectType === "path") {
+					originalParams = d.properties.originData;
+				} else {
+					originalParams = d.properties.originData?.data[index];
+				}
 				const rightClickFn = d.properties.option.onRightClick;
 				if (rightClickFn) {
 					rightClickFn({
@@ -270,7 +308,9 @@ class PolyLineLayer extends Layer {
 						target: {
 							index,
 							data: originalParams,
-							selected: this.selectIndexs.has(index),
+							selected: this.selectIndex.get(d.properties.index)
+								? this.selectIndex.get(d.properties.index)!.has(index)
+								: false,
 						},
 						originData: d.properties.originData,
 					});
@@ -278,27 +318,18 @@ class PolyLineLayer extends Layer {
 			});
 	}
 
-	drawSelectLayer(
-		coords: [number, number][][],
-		properties: {
-			[propName: string]: any;
-			option: PolyLineOption;
-			originData: PolyLineDataSource;
-			ids: (string | number)[];
-		}
-	) {
+	drawSelectLayer() {
+		this.selectLayer.selectAll("*").remove();
+		const pathData = this.formatData(this.data, (e, idx, index) => {
+			if (!this.selectIndex.get(idx)) {
+				return false;
+			} else {
+				return this.selectIndex.get(idx)!.has(index);
+			}
+		});
 		this.selectLayer
 			.selectAll("path")
-			.data([
-				{
-					type: "Feature",
-					geometry: {
-						type: "MultiLineString",
-						coordinates: coords,
-					},
-					properties,
-				},
-			])
+			.data(pathData)
 			.enter()
 			.append("path")
 			.attr("d", this.path)
@@ -350,13 +381,21 @@ class PolyLineLayer extends Layer {
 			});
 	}
 
-	formatData(data: PolyLineDataSource[]) {
+	formatData(
+		data: PolyLineDataSource[],
+		dataFilter?: (e: polyLineItem, idx: number, index: number) => boolean
+	) {
 		return data.reduce(
-			(pre, cur) => {
+			(pre, cur, idx) => {
 				const { data = [], option = {} } = cur;
 				const ids: (string | number)[] = [];
 				const coordinates: [number, number][][] = [];
-				data.forEach(j => {
+				data.forEach((j, innerIndex) => {
+					if (dataFilter) {
+						if (!dataFilter(j, idx, innerIndex)) {
+							return;
+						}
+					}
 					ids.push(j.id);
 					coordinates.push(j.coordinates);
 				});
@@ -392,6 +431,63 @@ class PolyLineLayer extends Layer {
 				};
 			}>
 		);
+	}
+
+	private combineIndex<T extends Map<number, Set<number>>>(
+		idxs: T,
+		index: number, // 外部index
+		idx: number // 内部index
+	): T {
+		switch (this._selectType) {
+			case "all": {
+				if (idxs.size === this.length) {
+					idxs = new Map<number, Set<number>>() as T;
+				} else {
+					idxs = this._allIndex as T;
+				}
+				return idxs;
+			}
+			case "path": {
+				if (idxs.has(index)) {
+					idxs.delete(index);
+				} else {
+					idxs.set(index, new Set(this._allIndex.get(index)));
+				}
+				return idxs;
+			}
+			case "link": {
+				if (idxs.has(index)) {
+					const temp = idxs.get(index)!;
+					if (temp.has(idx)) {
+						temp.delete(idx);
+						if (temp.size <= 0) {
+							idxs.delete(index);
+						}
+					} else {
+						idxs.get(index)?.add(idx);
+					}
+				} else {
+					idxs.set(index, new Set([idx]) as Set<number>);
+				}
+				return idxs;
+			}
+			default: {
+				if (idxs.has(index)) {
+					const temp = idxs.get(index)!;
+					if (temp.has(idx)) {
+						temp.delete(idx);
+						if (temp.size <= 0) {
+							idxs.delete(index);
+						}
+					} else {
+						idxs.get(index)?.add(idx);
+					}
+				} else {
+					idxs.set(index, new Set([idx]) as Set<number>);
+				}
+				return idxs;
+			}
+		}
 	}
 
 	private isPointInLine(

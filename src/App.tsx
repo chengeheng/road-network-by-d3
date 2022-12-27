@@ -386,6 +386,20 @@ function App() {
 				polygonLayer.setSelectType("path");
 			},
 		},
+		{
+			label: "选中所有线",
+			onClick: () => {
+				if (!polyLineLayer) return;
+				polyLineLayer.setSelectType("all");
+			},
+		},
+		{
+			label: "选中路段线",
+			onClick: () => {
+				if (!polyLineLayer) return;
+				polyLineLayer.setSelectType("path");
+			},
+		},
 	];
 
 	return (
