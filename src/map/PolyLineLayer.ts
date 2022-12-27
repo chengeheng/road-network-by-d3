@@ -78,6 +78,7 @@ class PolyLineLayer extends Layer {
 	private clickCount: number;
 	private clickTimer: NodeJS.Timeout | undefined;
 	private selectIndex: Map<number, Set<number>>;
+	private _hoverIndex: Map<number, Set<number>>;
 	private _selectType: "link" | "path" | "all"; // 选中的类型
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 
@@ -92,6 +93,7 @@ class PolyLineLayer extends Layer {
 		this.selectIndex = new Map();
 		this._selectType = this.option.selectType;
 		this._allIndex = new Map();
+		this._hoverIndex = new Map();
 		this.length = dataSource.length;
 	}
 
@@ -264,19 +266,14 @@ class PolyLineLayer extends Layer {
 						)
 					);
 
-					this.hoverIndex = this.combineIndex(
-						this.selectIndex,
+					this._hoverIndex = this.combineIndex(
+						new Map(),
 						d.properties.index,
 						index
 					);
 
 					if (index > -1) {
-						this.hoverLayer.select("path").remove();
-						const selectedData = d.properties.originData.data[index];
-						const selectedPaths = [];
-						selectedPaths.push(selectedData.coordinates);
-
-						this.drawHoverLayer(selectedPaths, d.properties);
+						this.drawHoverLayer();
 					}
 				}
 			})
@@ -345,32 +342,23 @@ class PolyLineLayer extends Layer {
 			});
 	}
 
-	drawHoverLayer(
-		coords: [number, number][][],
-		properties: {
-			[propName: string]: any;
-			option: PolyLineOption;
-			ids: (string | number)[];
-			originData: PolyLineDataSource;
-		}
-	) {
+	private drawHoverLayer() {
+		this.hoverLayer.selectAll("*").remove();
+		const pathData = this.formatData(this.data, (e, idx, index) => {
+			if (!this._hoverIndex.get(idx)) {
+				return false;
+			} else {
+				return this._hoverIndex.get(idx)!.has(index);
+			}
+		});
 		this.hoverLayer
 			.selectAll("path")
-			.data([
-				{
-					type: "Feature",
-					geometry: {
-						type: "MultiLineString",
-						coordinates: [...coords] ?? [],
-					},
-					properties,
-				},
-			])
+			.data(pathData)
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", d => d.properties.option.hoverColor)
-			.attr("stroke-width", d => d.properties.option.strokeWidth)
+			.attr("stroke", l => l.properties.option.selectColor)
+			.attr("stroke-width", l => l.properties.option.strokeWidth)
 			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
 				if (l.properties.option.strokeType === StrokeLineType.dotted) {
@@ -381,7 +369,7 @@ class PolyLineLayer extends Layer {
 			});
 	}
 
-	formatData(
+	private formatData(
 		data: PolyLineDataSource[],
 		dataFilter?: (e: polyLineItem, idx: number, index: number) => boolean
 	) {
@@ -412,6 +400,7 @@ class PolyLineLayer extends Layer {
 						},
 						ids,
 						originData: cur,
+						index: idx,
 					},
 				});
 

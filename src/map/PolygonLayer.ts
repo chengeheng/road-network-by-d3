@@ -133,6 +133,7 @@ class PolygonLayer extends Layer {
 	private clickCount: number;
 	private clickTimer: NodeJS.Timeout | undefined;
 	private selectIndex: Map<number, Set<number>>; // 选中的pathIndex
+	private _hoverIndex: Map<number, Set<number>>;
 	private _selectType: "link" | "path" | "all"; // 选中的类型
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 
@@ -149,6 +150,7 @@ class PolygonLayer extends Layer {
 		this.length = dataSource.length;
 		this._selectType = this.option.selectType;
 		this._allIndex = new Map();
+		this._hoverIndex = new Map();
 	}
 
 	init(g: SVGGElement, projection: d3.GeoProjection) {
@@ -280,7 +282,6 @@ class PolygonLayer extends Layer {
 								d.properties.index,
 								index
 							);
-							this.selectLayer.select("*").remove();
 							this.drawSelectLayer();
 						}
 						if (clickFn) {
@@ -327,28 +328,14 @@ class PolygonLayer extends Layer {
 					const index = coordinates.findIndex(i => {
 						return d3.polygonContains(i, targetCoord!);
 					});
-					if (index > -1) {
-						const hoverData = this.formatData(
-							this.data,
-							(e, outerIndex, innerIndex) => {
-								if (this._selectType === "all") return true;
-								if (
-									this._selectType === "path" &&
-									outerIndex === d.properties.index
-								)
-									return true;
+					this._hoverIndex = this.combineIndex(
+						new Map(),
+						d.properties.index,
+						index
+					);
 
-								if (
-									this._selectType === "link" &&
-									outerIndex === d.properties.index &&
-									innerIndex === index
-								) {
-									return true;
-								}
-								return false;
-							}
-						);
-						this.drawHoverLayer(hoverData);
+					if (index > -1) {
+						this.drawHoverLayer();
 					}
 				}
 			})
@@ -514,11 +501,17 @@ class PolygonLayer extends Layer {
 			.text(d => d.name);
 	}
 
-	private drawHoverLayer(data: [FormatDataProps[], NameDataProps[]]) {
+	private drawHoverLayer() {
 		this.hoverLayer.selectAll("*").remove();
 		const pathGroup = this.hoverLayer.append("g");
 		const nameGroup = this.hoverLayer.append("g");
-		const [pathData, nameData] = data;
+		const [pathData, nameData] = this.formatData(this.data, (e, idx, index) => {
+			if (!this._hoverIndex.get(idx)) {
+				return false;
+			} else {
+				return this._hoverIndex.get(idx)!.has(index);
+			}
+		});
 
 		pathGroup
 			.selectAll("path")
