@@ -89,7 +89,7 @@ const oldPolyLinesData: PolyLineDataSource[] = [
 			strokeColor: "#1176f0",
 			strokeWidth: 1,
 			selectable: true,
-			hoverColor: "#28B9F0",
+			hoverColor: "#333333",
 			strokeType: StrokeLineType.dotted,
 			onClick: (e: any) => {
 				console.log(e);
@@ -140,7 +140,7 @@ const oldPolygonsData: PolygonDataSource[] = [
 			strokeColor: "#1176f0",
 			strokeWidth: 0.5,
 			selectable: true,
-			hoverColor: "#28B9F0",
+			hoverColor: "#333333",
 			onClick: (e: any) => {
 				console.log(e);
 			},

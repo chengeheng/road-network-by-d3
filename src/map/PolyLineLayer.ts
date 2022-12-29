@@ -357,7 +357,7 @@ class PolyLineLayer extends Layer {
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", l => l.properties.option.selectColor)
+			.attr("stroke", l => l.properties.option.hoverColor)
 			.attr("stroke-width", l => l.properties.option.strokeWidth)
 			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
