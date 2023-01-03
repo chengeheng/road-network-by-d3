@@ -5,6 +5,7 @@ interface PointLayerOption extends LayerOption {
     width?: number;
     height?: number;
     offset?: [number, number];
+    rotate?: number;
     hoverColor?: string;
     stopPropagation?: boolean;
     onClick?: Function;
@@ -16,6 +17,7 @@ interface PointOption extends PointLayerOption {
     width: number;
     height: number;
     offset: [number, number];
+    rotate: number;
     stopPropagation: boolean;
     onClick: Function;
     onRightClick: Function;

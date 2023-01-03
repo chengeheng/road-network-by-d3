@@ -1,8 +1,7 @@
 import * as d3 from "d3";
-import PointSvg from "../images/point.svg";
 import Layer, { LayerOption, LayerType } from "./Layer";
 
-interface PointItemOption extends LayerOption {
+interface LabelItemOptionProps extends LayerOption {
 	rotate?: number;
 	offset?: [number, number];
 	stopPropagation?: boolean;
@@ -11,7 +10,7 @@ interface PointItemOption extends LayerOption {
 	onDbClick?: Function;
 }
 
-interface PointOption extends PointItemOption {
+interface LabelOptionProps extends LabelItemOptionProps {
 	rotate: number;
 	offset: [number, number];
 	stopPropagation: boolean;
@@ -20,57 +19,71 @@ interface PointOption extends PointItemOption {
 	onDbClick: Function;
 }
 
-interface PointDataSource {
-	id: string | number;
-	coordinate: [number, number];
-	name?: string;
-	icon?: string;
-	option?: PointLayerOption;
+interface StyleProps {
+	color?: string;
+	fontWeight?: string;
+	fontSize?: number;
+	strokeColor?: string;
+	strokeWidth?: number;
 }
 
-const defaultOption: PointOption = {
-	icon: PointSvg,
-	width: 36,
-	height: 36,
-	offset: [0, 0],
-	rotate: 0,
+interface LabelDataSourceProps {
+	name: string;
+	coordinate: [number, number];
+	id: string | number;
+	option?: LabelItemOptionProps;
+	style?: StyleProps;
+	hoverStyle?: StyleProps;
+	selectStyle?: StyleProps;
+}
 
+const defaultOption: LabelOptionProps = {
+	rotate: 0,
+	offset: [0, 0],
 	stopPropagation: false,
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
 };
 
-class LabelLayer extends Layer {
-	private clickCount: number;
-	private clickTimer: NodeJS.Timeout | undefined;
-	private filterIds: string[];
+const defaultTextStyle = {
+	fontSize: 12,
+	fontWeight: "normal",
+	color: "#333333",
+	strokeColor: "transparent",
+	strokeWidth: 2,
+};
 
-	data: PointDataSource[];
-	option: PointOption;
+class LabelLayer extends Layer {
+	private _clickCount: number;
+	private _clickTimer: NodeJS.Timeout | undefined;
+	private _filterIds: string[];
+	private _baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+
+	data: LabelDataSourceProps[];
+	option: LabelOptionProps;
 	isHided: boolean;
 
-	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
-
 	constructor(
-		dataSource: PointDataSource[],
-		option: PointLayerOption = defaultOption
+		dataSource: LabelDataSourceProps[],
+		option: LabelItemOptionProps = defaultOption
 	) {
 		super(LayerType.PointLayer, option);
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
-		this.clickCount = 0;
+
+		this._clickCount = 0;
 		this.isHided = false;
-		this.filterIds = [];
+		this._filterIds = [];
 	}
 
 	private initState() {
-		this.clickCount = 0;
+		this._clickCount = 0;
+		this._filterIds = [];
 		this.isHided = false;
-		this.filterIds = [];
 	}
 
-	protected init(g: SVGGElement, projection: d3.GeoProjection) {
+	init(g: SVGGElement, projection: d3.GeoProjection) {
 		super.init(g, projection);
 		this.container = d3
 			.select(g)
@@ -78,9 +91,9 @@ class LabelLayer extends Layer {
 			.attr("id", `point-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
-		this.baseLayer = this.container.append("g");
+		this._baseLayer = this.container.append("g");
 
-		this.draw();
+		this._draw();
 	}
 
 	remove(): void {
@@ -109,42 +122,22 @@ class LabelLayer extends Layer {
 		this.container.style("pointer-events", "none");
 	}
 
-	updateData(data: PointDataSource[]) {
+	updateData(data: LabelDataSourceProps[]) {
 		this.data = data;
 		// 初始化数据
-		this.baseLayer.selectAll("*").remove();
+		this._baseLayer.selectAll("*").remove();
 		this.initState();
 		this.container.style("display", "inline");
 		// 绘制
-		this.draw();
+		this._draw();
 	}
 
-	protected draw() {
-		if (this.option.hoverColor) {
-			this.drawWithHoverColor();
-		} else {
-			this.drawWithOutHoverColor();
-		}
-	}
-
-	private drawWithHoverColor() {
-		const g = this.baseLayer
+	protected _draw() {
+		const g = this._baseLayer
 			.selectAll("g")
 			.data(this.formatData(this.data))
 			.enter()
 			.append("g");
-		const hoverColor = this.option.hoverColor!;
-		const filterMatrix = this.makeFilterMatrix(hoverColor);
-		const id = this.makeRandomId();
-
-		this.baseLayer
-			.append("defs")
-			.append("filter")
-			.attr("id", id)
-			.append("feColorMatrix")
-			.attr("type", "matrix")
-			.attr("values", filterMatrix);
-		this.filterIds.push(id);
 
 		g.filter(i => {
 			if (i.name) {
@@ -156,43 +149,37 @@ class LabelLayer extends Layer {
 			.append("text")
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
-			.attr(
-				"transform",
-				d => `translate(${0},${d.option.offset[1] - d.option.height})`
-			)
 			.style("text-anchor", "middle")
-			.attr("font-size", 12)
-			.text(d => d.name!);
-	}
-
-	private drawWithOutHoverColor() {
-		const g = this.baseLayer
-			.selectAll("g")
-			.data(this.formatData(this.data))
-			.enter()
-			.append("g");
-
-		g.append("image")
-			.attr("xlink:href", d => d.icon)
-			.attr("x", d => d.imageLeftTop[0])
-			.attr("y", d => d.imageLeftTop[1])
-			.attr("width", d => d.option.width)
-			.attr("height", d => d.option.height)
 			.attr(
 				"transform",
 				d =>
-					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
+					`rotate(${d.option.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
 			)
+			.attr("fill", d => d.style?.color || defaultTextStyle.color)
+			.attr("font-size", d => d.style?.fontSize || defaultTextStyle.fontSize)
+			.attr(
+				"font-weight",
+				d => d.style?.fontWeight || defaultTextStyle.fontWeight
+			)
+			.attr("stroke", d => d.style?.strokeColor || defaultTextStyle.strokeColor)
+			.attr(
+				"stroke-width",
+				d => d.style?.strokeWidth || defaultTextStyle.strokeWidth
+			)
+			.attr("paint-order", "stroke")
+			.style("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.text(d => d.name!)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
 					e.stopPropagation();
 				}
-				this.clickCount++;
+				this._clickCount++;
 				const index = this.data.findIndex(i => i.id === d.id);
-				clearTimeout(this.clickTimer);
-				this.clickTimer = setTimeout(() => {
-					if (this.clickCount % 2 === 1) {
-						this.clickCount--;
+				clearTimeout(this._clickTimer);
+				this._clickTimer = setTimeout(() => {
+					if (this._clickCount % 2 === 1) {
+						this._clickCount--;
 						const clickFn = d.option.onClick;
 						if (clickFn) {
 							clickFn({
@@ -205,7 +192,7 @@ class LabelLayer extends Layer {
 							});
 						}
 					} else {
-						this.clickCount = 0;
+						this._clickCount = 0;
 						const dblClickFn = d.option.onDbClick;
 						if (dblClickFn) {
 							dblClickFn({
@@ -237,27 +224,9 @@ class LabelLayer extends Layer {
 					});
 				}
 			});
-
-		g.filter(i => {
-			if (i.name) {
-				return true;
-			} else {
-				return false;
-			}
-		})
-			.append("text")
-			.attr("x", d => d.coordinate[0])
-			.attr("y", d => d.coordinate[1])
-			.style("text-anchor", "middle")
-			.attr(
-				"transform",
-				d => `translate(${0},${d.option.offset[1] - d.option.height})`
-			)
-			.attr("font-size", 12)
-			.text(d => d.name!);
 	}
 
-	private formatData(data: PointDataSource[]) {
+	private formatData(data: LabelDataSourceProps[]) {
 		return data.map(i => {
 			const option = { ...this.option, ...i.option };
 			const coordinate = this.projection(i.coordinate)!;
@@ -270,6 +239,6 @@ class LabelLayer extends Layer {
 	}
 }
 
-export type { PointDataSource };
+export type { LabelDataSourceProps };
 
 export default LabelLayer;

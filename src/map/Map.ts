@@ -58,7 +58,7 @@ class Map {
 			this.height = rect.height;
 			this.projection = d3
 				.geoMercator()
-				.scale(20000000)
+				.scale(30000000)
 				.center(option.center!)
 				.translate([rect.width / 2, rect.height / 2]);
 
@@ -94,7 +94,7 @@ class Map {
 		// 添加缩放事件
 		const zoom = d3
 			.zoom<SVGSVGElement, unknown>()
-			.scaleExtent([1 / 5, 5])
+			.scaleExtent([1 / 10, 5])
 			// .wheelDelta(event => {
 			// 	if (event.deltaY < 0) {
 			// 		if (this.zoomLevel === 5) return Math.log2(1);

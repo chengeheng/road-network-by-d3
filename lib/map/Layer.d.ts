@@ -20,7 +20,7 @@ declare class Layer {
     enableLayerFunc(): void;
     disableLayerFunc(): void;
     protected makeRandomId(): string;
-    protected calcuteTextWidth(text: string, fontSize?: string): number;
+    protected calcuteTextWidth(text: string, fontSize?: string): number[];
 }
 export type { LayerOption };
 export { Layer as default, LayerType };

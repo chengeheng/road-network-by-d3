@@ -1,6 +1,7 @@
 .App {
 	height: 100%;
 	overflow: hidden;
+	background-color: #e3e3e3;
 }
 
 .button {

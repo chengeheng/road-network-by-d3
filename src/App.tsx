@@ -9,6 +9,7 @@ import PolyLineLayer, {
 	PolyLineDataSource,
 	StrokeLineType,
 } from "./map/PolyLineLayer";
+import LabelLayer, { LabelDataSourceProps } from "./map/LabelLayer";
 
 import TreePng from "./tree.png";
 
@@ -34,6 +35,34 @@ const focusPolygonsData: PolygonDataSource = {
 		hoverColor: "#b3ff00",
 	},
 };
+
+const oldLabelData: LabelDataSourceProps[] = [
+	{
+		id: 1,
+		name: "博园路",
+		coordinate: [118.391698, 31.343069],
+		option: {
+			rotate: 40,
+			stopPropagation: true,
+			onClick: (e: any) => {
+				console.log("label click", e);
+			},
+			onDbClick: (e: any) => console.log("label double click", e),
+			onRightClick: (e: any) => console.log("label right click", e),
+		},
+		style: {
+			color: "#1176f0",
+			strokeColor: "#ffffff",
+			strokeWidth: 3,
+		},
+		hoverStyle: {
+			color: "blue",
+		},
+		selectStyle: {
+			color: "black",
+		},
+	},
+];
 
 const oldPointsData: PointDataSource[] = [
 	{
@@ -195,6 +224,31 @@ const newPolyLinesData: PolyLineDataSource[] = [
 		},
 	},
 ];
+const newLabelData: LabelDataSourceProps[] = [
+	{
+		id: 2,
+		name: "中国电信",
+		coordinate: [118.39248, 31.341504],
+		option: {
+			rotate: 40,
+			stopPropagation: true,
+			onClick: (e: any) => {
+				console.log("label click", e);
+			},
+			onDbClick: (e: any) => console.log("label double click", e),
+			onRightClick: (e: any) => console.log("label right click", e),
+		},
+		style: {
+			color: "#333",
+		},
+		hoverStyle: {
+			color: "blue",
+		},
+		selectStyle: {
+			color: "black",
+		},
+	},
+];
 const newPolygonsData: PolygonDataSource[] = [
 	focusPolygonsData,
 	{
@@ -241,6 +295,7 @@ function App() {
 	const [pointLayer, setPointLayer] = useState<PointLayer>();
 	const [polygonLayer, setPolygonLayer] = useState<PolygonLayer>();
 	const [polyLineLayer, setPolyLineLayer] = useState<PolyLineLayer>();
+	const [labelLayer, setLabelLayer] = useState<LabelLayer>();
 	const [map, setMap] = useState<Map>();
 	useEffect(() => {
 		const map = new Map("container", {
@@ -250,12 +305,15 @@ function App() {
 		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#28B9F0" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData);
+		const labellayer = new LabelLayer(oldLabelData);
 		map.addLayer(polylayer);
 		map.addLayer(linelayer);
 		map.addLayer(pointlayer);
+		map.addLayer(labellayer);
 		setPointLayer(pointlayer);
 		setPolygonLayer(polylayer);
 		setPolyLineLayer(linelayer);
+		setLabelLayer(labellayer);
 		setMap(map);
 	}, []);
 
@@ -265,6 +323,13 @@ function App() {
 			onClick: () => {
 				if (!pointLayer) return;
 				pointLayer.updateData(newPointsData);
+			},
+		},
+		{
+			label: "更新文字数据",
+			onClick: () => {
+				if (!labelLayer) return;
+				labelLayer.updateData(newLabelData);
 			},
 		},
 		{
@@ -300,6 +365,13 @@ function App() {
 			onClick: () => {
 				if (!pointLayer) return;
 				pointLayer.hide();
+			},
+		},
+		{
+			label: "隐藏文字图层",
+			onClick: () => {
+				if (!labelLayer) return;
+				labelLayer.hide();
 			},
 		},
 		{

@@ -32,6 +32,7 @@ interface PolygonLayerOption extends LayerOption {
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
+    selectType?: "link" | "path" | "all";
 }
 interface PolygonOption extends PolygonLayerOption {
     strokeColor: string;
@@ -48,6 +49,7 @@ interface PolygonOption extends PolygonLayerOption {
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
+    selectType: "link" | "path" | "all";
 }
 interface PolygonDataSource {
     data: polygonItem[];
@@ -57,11 +59,13 @@ interface NameStyleProps {
     color?: string;
     fontWeight?: string | number;
     fontSize?: number;
+    rotate?: number;
 }
 interface DefaultNameDataProps extends NameStyleProps {
     color: string;
     fontWeight: string | number;
     fontSize: number;
+    rotate: number;
 }
 interface NameDataProps extends DefaultNameDataProps {
     name: string;
@@ -86,13 +90,16 @@ declare class PolygonLayer extends Layer {
     option: PolygonOption;
     path: d3.GeoPath<any, any>;
     isHided: boolean;
-    nameData: NameDataProps[];
+    length: number;
     baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     selectLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     hoverLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     private clickCount;
     private clickTimer;
     private selectIndex;
+    private _hoverIndex;
+    private _selectType;
+    private _allIndex;
     constructor(dataSource: PolygonDataSource[], option?: PolygonLayerOption);
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
@@ -107,6 +114,7 @@ declare class PolygonLayer extends Layer {
     enableLayerFunc(): void;
     disableLayerFunc(): void;
     updateData(data: PolygonDataSource[]): void;
+    setSelectType(type: "link" | "path" | "all"): void;
     protected draw(): void;
     private combineIndex;
     private drawSelectLayer;

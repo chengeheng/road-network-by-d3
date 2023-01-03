@@ -22,6 +22,7 @@ interface PolyLineLayerOption extends LayerOption {
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
+    selectType?: "link" | "path" | "all";
 }
 interface PolyLineOption extends PolyLineLayerOption {
     strokeColor: string;
@@ -36,6 +37,7 @@ interface PolyLineOption extends PolyLineLayerOption {
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
+    selectType: "link" | "path" | "all";
 }
 interface PolyLineDataSource {
     data: polyLineItem[];
@@ -45,12 +47,16 @@ declare class PolyLineLayer extends Layer {
     data: PolyLineDataSource[];
     option: PolyLineOption;
     path: d3.GeoPath<any, any>;
+    length: number;
     baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     selectLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     hoverLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     private clickCount;
     private clickTimer;
-    private selectIndexs;
+    private selectIndex;
+    private _hoverIndex;
+    private _selectType;
+    private _allIndex;
     constructor(dataSource: PolyLineDataSource[], option?: PolyLineLayerOption);
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
@@ -65,32 +71,12 @@ declare class PolyLineLayer extends Layer {
     enableLayerFunc(): void;
     disableLayerFunc(): void;
     updateData(data: PolyLineDataSource[]): void;
+    setSelectType(type: "link" | "path" | "all"): void;
     protected draw(): void;
-    drawSelectLayer(coords: [number, number][][], properties: {
-        [propName: string]: any;
-        option: PolyLineOption;
-        originData: PolyLineDataSource;
-        ids: (string | number)[];
-    }): void;
-    drawHoverLayer(coords: [number, number][][], properties: {
-        [propName: string]: any;
-        option: PolyLineOption;
-        ids: (string | number)[];
-        originData: PolyLineDataSource;
-    }): void;
-    formatData(data: PolyLineDataSource[]): {
-        type: string;
-        geometry: {
-            type: string;
-            coordinates: [number, number][][];
-        };
-        properties: {
-            [propName: string]: any;
-            option: PolyLineOption;
-            ids: (string | number)[];
-            originData: PolyLineDataSource;
-        };
-    }[];
+    drawSelectLayer(): void;
+    private drawHoverLayer;
+    private formatData;
+    private combineIndex;
     private isPointInLine;
 }
 export type { PolyLineDataSource };
