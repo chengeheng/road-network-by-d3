@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import Layer, { LayerOption } from "./Layer";
+import Layer, { LayerOptionProps } from ".";
 type polyLineItem = {
     id: string | number;
     coordinates: [number, number][];
@@ -9,7 +9,7 @@ declare enum StrokeLineType {
     dotted = "dotted",
     solid = "solid"
 }
-interface PolyLineLayerOption extends LayerOption {
+interface PolyLineLayerOption extends LayerOptionProps {
     strokeColor?: string;
     strokeWidth?: number;
     strokeOpacity?: number;

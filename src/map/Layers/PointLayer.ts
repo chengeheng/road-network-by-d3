@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import PointSvg from "../../images/point.svg";
+import PointSvg from "../images/point.svg";
 import Layer, { LayerOptionProps, LayerType } from ".";
 
 interface PointLayerOption extends LayerOptionProps {

@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import Layer from "./Layer";
+import Layer from "./Layers";
 interface MapOption {
     center?: [number, number];
     class?: string;
@@ -16,7 +16,6 @@ declare class Map {
     private options;
     private zoom;
     private zoomLevel;
-    private defaultConfig;
     private layers;
     projection: d3.GeoProjection;
     constructor(id: string, options?: MapOption);

@@ -13,7 +13,7 @@ import {
 	PolyLineDataSource,
 	StrokeLineType,
 	LabelDataSourceProps,
-} from "./map/Layers";
+} from "./map";
 
 const focusCoords: [number, number][] = [
 	[118.391213, 31.343501],

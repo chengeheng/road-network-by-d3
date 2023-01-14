@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import Layer, { LayerOption } from "./Layer";
-interface LabelItemOptionProps extends LayerOption {
+import Layer, { LayerOptionProps } from ".";
+interface LabelItemOptionProps extends LayerOptionProps {
     rotate?: number;
     offset?: [number, number];
     stopPropagation?: boolean;

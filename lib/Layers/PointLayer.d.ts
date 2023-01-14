@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import Layer, { LayerOption } from "./Layer";
-interface PointLayerOption extends LayerOption {
+import Layer, { LayerOptionProps } from ".";
+interface PointLayerOption extends LayerOptionProps {
     icon?: string;
     width?: number;
     height?: number;
