@@ -6,9 +6,9 @@ enum LayerType {
 	PolyLineLayer,
 }
 
-interface LayerOption {}
+interface LayerOptionProps {}
 
-const defaultOption: LayerOption = {};
+const defaultOption: LayerOptionProps = {};
 
 class Layer {
 	type: LayerType; // 图层类型
@@ -48,7 +48,6 @@ class Layer {
 	}
 
 	protected calcuteTextWidth(text: string, fontSize = "12px") {
-		console.log(text, fontSize);
 		let span = document.getElementById("__getwidth");
 		if (!span) {
 			span = document.createElement("span");
@@ -66,5 +65,5 @@ class Layer {
 	}
 }
 
-export type { LayerOption };
+export type { LayerOptionProps };
 export { Layer as default, LayerType };

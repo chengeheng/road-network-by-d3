@@ -2,16 +2,18 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 import "./App.css";
 
-import Map from "./map/Map";
-import PointLayer, { PointDataSource } from "./map/PointLayer";
-import PolygonLayer, { PolygonDataSource } from "./map/PolygonLayer";
-import PolyLineLayer, {
+import Map from "./map";
+import {
+	PointLayer,
+	PolygonLayer,
+	PolyLineLayer,
+	LabelLayer,
+	PointDataSource,
+	PolygonDataSource,
 	PolyLineDataSource,
 	StrokeLineType,
-} from "./map/PolyLineLayer";
-import LabelLayer, { LabelDataSourceProps } from "./map/LabelLayer";
-
-import TreePng from "./tree.png";
+	LabelDataSourceProps,
+} from "./map/Layers";
 
 const focusCoords: [number, number][] = [
 	[118.391213, 31.343501],
@@ -70,8 +72,8 @@ const oldPointsData: PointDataSource[] = [
 		name: "金宝大酒店",
 		coordinate: [118.39053, 31.343104],
 		option: {
-			icon: TreePng,
-			rotate: 30,
+			offset: [0, 18],
+			rotate: 0,
 			stopPropagation: true,
 			onClick: (e: any) => {
 				console.log("pointEvent", e);
@@ -83,7 +85,7 @@ const oldPointsData: PointDataSource[] = [
 	{
 		id: 2,
 		name: "世界茶饮",
-		coordinate: [118.391581, 31.34204],
+		coordinate: [118.39053, 31.343104],
 		option: {
 			stopPropagation: true,
 			onClick: (e: any) => {

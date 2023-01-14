@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import Layer from "./Layer";
+import Layer from "./Layers";
 
 interface MapOption {
 	center?: [number, number];
@@ -8,13 +8,8 @@ interface MapOption {
 	[propName: string]: any;
 }
 
-interface MapOptionType extends MapOption {
-	center: [number, number];
-	onClick: Function;
-}
-
-const defaultOptions: MapOptionType = {
-	center: [118.39067530252157, 31.343146080447582],
+const defaultOptions = {
+	center: [118.39067530252157, 31.343146080447582] as [number, number],
 	onClick: () => {},
 };
 
@@ -25,10 +20,9 @@ class Map {
 	private width: number;
 	private height: number;
 	private svg!: SVGSVGElement;
-	private options: MapOptionType;
+	private options: MapOption;
 	private zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
 	private zoomLevel: number;
-	private defaultConfig: object;
 
 	private layers: Layer[];
 
@@ -41,7 +35,6 @@ class Map {
 		this.height = 0;
 		this.layers = [];
 		this.zoomLevel = 1;
-		this.defaultConfig = {};
 
 		this.projection = d3.geoMercator();
 
@@ -116,8 +109,10 @@ class Map {
 			.call(zoom)
 			.on("click", e => {
 				const projection = this.projection;
-				console.log(d3.pointer(e, g.node()));
-				this.options.onClick(e, projection.invert!(d3.pointer(e, g.node())));
+				// console.log(d3.pointer(e, g.node()));
+				if (this.options.onClick) {
+					this.options.onClick(e, projection.invert!(d3.pointer(e, g.node())));
+				}
 			})
 			.on("dblclick.zoom", null);
 	}

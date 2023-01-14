@@ -1,8 +1,8 @@
 import * as d3 from "d3";
-import PointSvg from "../images/point.svg";
-import Layer, { LayerOption, LayerType } from "./Layer";
+import PointSvg from "../../images/point.svg";
+import Layer, { LayerOptionProps, LayerType } from ".";
 
-interface PointLayerOption extends LayerOption {
+interface PointLayerOption extends LayerOptionProps {
 	icon?: string;
 	width?: number;
 	height?: number;
@@ -163,7 +163,7 @@ class PointLayer extends Layer {
 			.attr(
 				"transform",
 				d =>
-					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
+					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]})`
 			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
@@ -342,16 +342,17 @@ class PointLayer extends Layer {
 	private formatData(data: PointDataSource[]) {
 		return data.map(i => {
 			const option = { ...this.option, ...i.option };
+			const { offset } = option;
 			const coordinate = this.projection(i.coordinate)!;
 			const width = option.width;
 			const height = option.height;
 			const imageCenter: [number, number] = [
-				coordinate[0],
-				coordinate[1] - height / 2,
+				coordinate[0] + offset[0],
+				coordinate[1] + offset[1] - height / 2,
 			];
 			const imageLeftTop: [number, number] = [
-				coordinate[0] - width / 2,
-				coordinate[1] - height,
+				coordinate[0] + offset[0] - width / 2,
+				coordinate[1] + offset[1] - height,
 			];
 			return {
 				...i,

@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import Layer, { LayerOption, LayerType } from "./Layer";
+import Layer, { LayerOptionProps, LayerType } from ".";
 
 interface NameStyleProps {
 	color?: string;
@@ -21,7 +21,7 @@ enum StrokeLineType {
 	solid = "solid",
 }
 
-interface PolygonLayerOption extends LayerOption {
+interface PolygonLayerOption extends LayerOptionProps {
 	strokeColor?: string;
 	strokeWidth?: number;
 	strokeOpacity?: number;
