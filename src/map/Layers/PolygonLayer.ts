@@ -196,85 +196,6 @@ class PolygonLayer extends Layer {
 		};
 	}
 
-	protected _formatData(
-		data: PolygonDataSourceProps[],
-		dataFilter?: (e: polygonItem, idx: number, index: number) => boolean
-	): [FormatDataProps[], NameDataProps[]] {
-		const nameData: NameDataProps[] = [];
-		const pathData = data.reduce((pre, cur, idx) => {
-			const { data = [], option } = cur;
-			const ids: (string | number)[] = [];
-			const coordinates: [number, number][][] = [];
-			const reverseCoords: [number, number][][] = [];
-			data.forEach((j, innerIndex) => {
-				if (dataFilter) {
-					if (!dataFilter(j, idx, innerIndex)) {
-						return;
-					}
-				}
-				ids.push(j.id);
-				coordinates.push(j.coordinates);
-				if (j.name) {
-					const nameStyle = {
-						...defaultNameStyle,
-						...j.nameStyle,
-					};
-
-					const coordinate = this.projection(
-						d3.polygonCentroid(j.coordinates)
-					)!;
-					nameData.push({
-						name: j.name,
-						fontSize: nameStyle.fontSize,
-						fontWeight: nameStyle.fontWeight,
-						color: nameStyle.color,
-						coordinate,
-						rotate: nameStyle.rotate,
-					});
-				}
-				if (j.reverseCoords) {
-					reverseCoords.push(j.reverseCoords);
-				}
-			});
-			if (coordinates.length === 0) return pre;
-			const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
-			pre.push({
-				type: "Feature",
-				geometry: {
-					type: "Polygon",
-					coordinates: [...coordinates, ...reverseCoords],
-				},
-				properties: {
-					option: {
-						...this.option,
-						...option,
-						style: {
-							...this.option.style,
-							...style,
-						},
-						hoverStyle: {
-							...this.option.hoverStyle,
-							...style,
-							...hoverStyle,
-						},
-						selectStyle: {
-							...this.option.selectStyle,
-							...style,
-							...selectStyle,
-						},
-						hasHover: !!hoverStyle?.fillColor || this.option.hasHover,
-					},
-					ids,
-					originData: cur,
-					index: idx,
-				},
-			});
-
-			return pre;
-		}, [] as FormatDataProps[]);
-		return [pathData, nameData];
-	}
-
 	private _combineIndex<T extends Map<number, Set<number>>>(
 		idxs: T,
 		index: number, // 外部index
@@ -442,6 +363,85 @@ class PolygonLayer extends Layer {
 				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
 			)
 			.text(d => d.name);
+	}
+
+	private _formatData(
+		data: PolygonDataSourceProps[],
+		dataFilter?: (e: polygonItem, idx: number, index: number) => boolean
+	): [FormatDataProps[], NameDataProps[]] {
+		const nameData: NameDataProps[] = [];
+		const pathData = data.reduce((pre, cur, idx) => {
+			const { data = [], option } = cur;
+			const ids: (string | number)[] = [];
+			const coordinates: [number, number][][] = [];
+			const reverseCoords: [number, number][][] = [];
+			data.forEach((j, innerIndex) => {
+				if (dataFilter) {
+					if (!dataFilter(j, idx, innerIndex)) {
+						return;
+					}
+				}
+				ids.push(j.id);
+				coordinates.push(j.coordinates);
+				if (j.name) {
+					const nameStyle = {
+						...defaultNameStyle,
+						...j.nameStyle,
+					};
+
+					const coordinate = this.projection(
+						d3.polygonCentroid(j.coordinates)
+					)!;
+					nameData.push({
+						name: j.name,
+						fontSize: nameStyle.fontSize,
+						fontWeight: nameStyle.fontWeight,
+						color: nameStyle.color,
+						coordinate,
+						rotate: nameStyle.rotate,
+					});
+				}
+				if (j.reverseCoords) {
+					reverseCoords.push(j.reverseCoords);
+				}
+			});
+			if (coordinates.length === 0) return pre;
+			const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
+			pre.push({
+				type: "Feature",
+				geometry: {
+					type: "Polygon",
+					coordinates: [...coordinates, ...reverseCoords],
+				},
+				properties: {
+					option: {
+						...this.option,
+						...option,
+						style: {
+							...this.option.style,
+							...style,
+						},
+						hoverStyle: {
+							...this.option.hoverStyle,
+							...style,
+							...hoverStyle,
+						},
+						selectStyle: {
+							...this.option.selectStyle,
+							...style,
+							...selectStyle,
+						},
+						hasHover: !!hoverStyle?.fillColor || this.option.hasHover,
+					},
+					ids,
+					originData: cur,
+					index: idx,
+				},
+			});
+
+			return pre;
+		}, [] as FormatDataProps[]);
+		return [pathData, nameData];
 	}
 
 	protected _draw() {

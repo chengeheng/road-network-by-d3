@@ -8,7 +8,7 @@ import {
 
 import {
 	LabelDataSourceProps,
-	PointDataSource,
+	PointDataSourceProps,
 	PolygonDataSourceProps,
 	PolyLineDataSourceProps,
 } from "./Layers";
@@ -16,7 +16,7 @@ import {
 import Map from "./Map";
 
 export type {
-	PointDataSource,
+	PointDataSourceProps,
 	PolygonDataSourceProps,
 	PolyLineDataSourceProps,
 	LabelDataSourceProps,

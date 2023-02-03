@@ -1,6 +1,6 @@
 import Layer, { LayerOptionProps, LayerType } from "./Layer";
 import LabelLayer, { LabelDataSourceProps } from "./LabelLayer";
-import PointLayer, { PointDataSource } from "./PointLayer";
+import PointLayer, { PointDataSourceProps } from "./PointLayer";
 import PolygonLayer, {
 	PolygonDataSourceProps,
 	StrokeLineType,
@@ -10,7 +10,7 @@ import PolyLineLayer, { PolyLineDataSourceProps } from "./PolyLineLayer";
 export type {
 	LayerOptionProps,
 	LabelDataSourceProps,
-	PointDataSource,
+	PointDataSourceProps,
 	PolygonDataSourceProps,
 	PolyLineDataSourceProps,
 };

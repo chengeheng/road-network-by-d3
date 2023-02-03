@@ -141,7 +141,7 @@ class PolyLineLayer extends Layer {
 		};
 	}
 
-	protected draw() {
+	protected _draw() {
 		this.baseLayer
 			.selectAll("path")
 			.data(
@@ -520,7 +520,7 @@ class PolyLineLayer extends Layer {
 			.append("g")
 			.style("pointer-events", "none");
 
-		this.draw();
+		this._draw();
 	}
 
 	remove(): void {
@@ -555,7 +555,7 @@ class PolyLineLayer extends Layer {
 		this.baseLayer.selectAll("path").remove();
 		this.selectLayer.selectAll("path").remove();
 		this.hoverLayer.selectAll("path").remove();
-		this.draw();
+		this._draw();
 	}
 
 	setSelectType(type: "link" | "path" | "all"): void {

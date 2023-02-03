@@ -8,7 +8,7 @@ import {
 	PolygonLayer,
 	PolyLineLayer,
 	LabelLayer,
-	PointDataSource,
+	PointDataSourceProps,
 	PolygonDataSourceProps,
 	PolyLineDataSourceProps,
 	StrokeLineType,
@@ -70,7 +70,7 @@ const oldLabelData: LabelDataSourceProps[] = [
 	},
 ];
 
-const oldPointsData: PointDataSource[] = [
+const oldPointsData: PointDataSourceProps[] = [
 	{
 		id: 1,
 		name: "金宝大酒店",
@@ -198,7 +198,7 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 	},
 ];
 
-const newPointsData: PointDataSource[] = [
+const newPointsData: PointDataSourceProps[] = [
 	{
 		id: 1,
 		name: "樱日本料理",

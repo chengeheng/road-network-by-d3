@@ -29,7 +29,7 @@ interface PointOption extends PointLayerOption {
 	onDbClick: Function;
 }
 
-interface PointDataSource {
+interface PointDataSourceProps {
 	id: string | number;
 	coordinate: [number, number];
 	name?: string;
@@ -51,7 +51,7 @@ const defaultOption: PointOption = {
 };
 
 class PointLayer extends Layer {
-	data: PointDataSource[];
+	data: PointDataSourceProps[];
 	option: PointOption;
 	isHided: boolean;
 
@@ -62,7 +62,7 @@ class PointLayer extends Layer {
 	private filterIds: string[];
 
 	constructor(
-		dataSource: PointDataSource[],
+		dataSource: PointDataSourceProps[],
 		option: PointLayerOption = defaultOption
 	) {
 		super(LayerType.PointLayer, option);
@@ -73,77 +73,20 @@ class PointLayer extends Layer {
 		this.filterIds = [];
 	}
 
-	private initState() {
+	private _initState() {
 		this.clickCount = 0;
 		this.isHided = false;
 		this.filterIds = [];
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
-		super.init(g, projection);
-		this.container = d3
-			.select(g)
-			.append("g")
-			.attr("id", `point-layer-${this.makeRandomId()}`);
-		this.container.selectAll("g").remove();
-
-		this.baseLayer = this.container.append("g");
-
-		this.draw();
-	}
-
-	remove(): void {
-		this.container.remove();
-	}
-
-	/**
-	 * 显示当前图层
-	 */
-	show(): void {
-		this.container.style("display", "inline");
-	}
-
-	/**
-	 * 隐藏当前图层
-	 */
-	hide(): void {
-		this.container.style("display", "none");
-	}
-
-	enableLayerFunc(): void {
-		this.container.style("pointer-events", "inherit");
-	}
-
-	disableLayerFunc(): void {
-		this.container.style("pointer-events", "none");
-	}
-
-	updateData(data: PointDataSource[]) {
-		this.data = data;
-		// 初始化数据
-		this.baseLayer.selectAll("*").remove();
-		this.initState();
-		this.container.style("display", "inline");
-		// 绘制
-		this.draw();
-	}
-
-	protected draw() {
-		if (this.option.hoverColor) {
-			this.drawWithHoverColor();
-		} else {
-			this.drawWithOutHoverColor();
-		}
-	}
-
-	private drawWithHoverColor() {
+	private _drawWithHoverColor() {
 		const g = this.baseLayer
 			.selectAll("g")
-			.data(this.formatData(this.data))
+			.data(this._formatData(this.data))
 			.enter()
 			.append("g");
 		const hoverColor = this.option.hoverColor!;
-		const filterMatrix = this.makeFilterMatrix(hoverColor);
+		const filterMatrix = this._makeFilterMatrix(hoverColor);
 		const id = this.makeRandomId();
 
 		this.baseLayer
@@ -250,7 +193,7 @@ class PointLayer extends Layer {
 	private drawWithOutHoverColor() {
 		const g = this.baseLayer
 			.selectAll("g")
-			.data(this.formatData(this.data))
+			.data(this._formatData(this.data))
 			.enter()
 			.append("g");
 
@@ -339,7 +282,7 @@ class PointLayer extends Layer {
 			.text(d => d.name!);
 	}
 
-	private formatData(data: PointDataSource[]) {
+	private _formatData(data: PointDataSourceProps[]) {
 		return data.map(i => {
 			const option = { ...this.option, ...i.option };
 			const { offset } = option;
@@ -365,8 +308,8 @@ class PointLayer extends Layer {
 		});
 	}
 
-	private makeFilterMatrix(color: string) {
-		const [r, g, b] = this.hexToRgb(color);
+	private _makeFilterMatrix(color: string) {
+		const [r, g, b] = this._hexToRgb(color);
 		return `
 		0 0 0 0 ${r / 255} 
 		0 0 0 0 ${g / 255} 
@@ -375,7 +318,7 @@ class PointLayer extends Layer {
 	`;
 	}
 
-	private hexToRgb(color: string): [number, number, number] {
+	private _hexToRgb(color: string): [number, number, number] {
 		// 16进制颜色值的正则
 		const reg = /^#([0-9a-f]{3}|[0-9a-f]{6})$/;
 		const testColor = color.toLowerCase();
@@ -400,8 +343,65 @@ class PointLayer extends Layer {
 			throw new Error("输入的颜色值必须是合法的16进制颜色");
 		}
 	}
+
+	protected _draw() {
+		if (this.option.hoverColor) {
+			this._drawWithHoverColor();
+		} else {
+			this.drawWithOutHoverColor();
+		}
+	}
+
+	init(g: SVGGElement, projection: d3.GeoProjection) {
+		super.init(g, projection);
+		this.container = d3
+			.select(g)
+			.append("g")
+			.attr("id", `point-layer-${this.makeRandomId()}`);
+		this.container.selectAll("g").remove();
+
+		this.baseLayer = this.container.append("g");
+
+		this._draw();
+	}
+
+	remove(): void {
+		this.container.remove();
+	}
+
+	/**
+	 * 显示当前图层
+	 */
+	show(): void {
+		this.container.style("display", "inline");
+	}
+
+	/**
+	 * 隐藏当前图层
+	 */
+	hide(): void {
+		this.container.style("display", "none");
+	}
+
+	enableLayerFunc(): void {
+		this.container.style("pointer-events", "inherit");
+	}
+
+	disableLayerFunc(): void {
+		this.container.style("pointer-events", "none");
+	}
+
+	updateData(data: PointDataSourceProps[]) {
+		this.data = data;
+		// 初始化数据
+		this.baseLayer.selectAll("*").remove();
+		this._initState();
+		this.container.style("display", "inline");
+		// 绘制
+		this._draw();
+	}
 }
 
-export type { PointDataSource };
+export type { PointDataSourceProps };
 
 export default PointLayer;
