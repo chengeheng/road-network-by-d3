@@ -5,6 +5,7 @@ interface NameStyleProps {
 	color?: string;
 	fontWeight?: string | number;
 	fontSize?: number;
+	rotate?: number;
 }
 
 type polygonItem = {
@@ -21,7 +22,7 @@ enum StrokeLineType {
 	solid = "solid",
 }
 
-interface PolygonLayerOption extends LayerOptionProps {
+interface StyleProps {
 	strokeColor?: string;
 	strokeWidth?: number;
 	strokeOpacity?: number;
@@ -29,9 +30,14 @@ interface PolygonLayerOption extends LayerOptionProps {
 	strokeDashArray?: number[];
 	fillColor?: string;
 	fillOpacity?: number;
-	selectColor?: string;
-	selectable?: boolean;
-	hoverColor?: string;
+}
+
+interface PolygonLayerOptionProps extends LayerOptionProps {
+	style?: StyleProps;
+	selectStyle?: StyleProps;
+	hoverStyle?: StyleProps;
+
+	selectable: boolean;
 	stopPropagation?: boolean;
 	onClick?: Function;
 	onRightClick?: Function;
@@ -39,17 +45,37 @@ interface PolygonLayerOption extends LayerOptionProps {
 	selectType?: "link" | "path" | "all";
 }
 
-interface PolygonOption extends PolygonLayerOption {
-	strokeColor: string;
-	strokeWidth: number;
-	strokeOpacity: number;
-	strokeType: StrokeLineType;
-	strokeDashArray: number[];
-	fillColor: string;
-	fillOpacity: number;
-	selectColor: string;
+interface _PolygonOptionProps {
+	style: {
+		strokeColor: string;
+		strokeWidth: number;
+		strokeOpacity: number;
+		strokeType: StrokeLineType;
+		strokeDashArray: number[];
+		fillColor: string;
+		fillOpacity: number;
+	};
+	selectStyle: {
+		strokeColor: string;
+		strokeWidth: number;
+		strokeOpacity: number;
+		strokeType: StrokeLineType;
+		strokeDashArray: number[];
+		fillColor: string;
+		fillOpacity: number;
+	};
+	hoverStyle: {
+		strokeColor: string;
+		strokeWidth: number;
+		strokeOpacity: number;
+		strokeType: StrokeLineType;
+		strokeDashArray: number[];
+		fillColor: string;
+		fillOpacity: number;
+	};
+
+	hasHover: boolean;
 	selectable: boolean;
-	hoverColor: string;
 	stopPropagation: boolean;
 	onClick: Function;
 	onRightClick: Function;
@@ -57,16 +83,9 @@ interface PolygonOption extends PolygonLayerOption {
 	selectType: "link" | "path" | "all";
 }
 
-interface PolygonDataSource {
+interface PolygonDataSourceProps {
 	data: polygonItem[];
-	option?: PolygonLayerOption;
-}
-
-interface NameStyleProps {
-	color?: string;
-	fontWeight?: string | number;
-	fontSize?: number;
-	rotate?: number;
+	option?: PolygonLayerOptionProps;
 }
 
 interface DefaultNameDataProps extends NameStyleProps {
@@ -86,30 +105,31 @@ interface FormatDataProps {
 		coordinates: [number, number][][];
 	};
 	properties: {
-		option: PolygonOption;
+		option: _PolygonOptionProps;
 		ids: (string | number)[];
-		originData: PolygonDataSource;
+		originData: PolygonDataSourceProps;
 		index: number;
 		[propName: string]: any;
 	};
 }
 
-const defaultOption: PolygonOption = {
-	strokeColor: "#333333",
-	strokeWidth: 1,
-	strokeOpacity: 1,
-	strokeType: StrokeLineType.solid,
-	strokeDashArray: [2, 3],
-	fillColor: "transparent",
-	fillOpacity: 1,
-	selectColor: "yellow",
+const defaultOption = {
+	style: {
+		strokeColor: "#333333",
+		strokeWidth: 1,
+		strokeOpacity: 1,
+		strokeType: StrokeLineType.solid,
+		strokeDashArray: [2, 3],
+		fillColor: "transparent",
+		fillOpacity: 1,
+	},
+
 	selectable: false,
-	hoverColor: "green",
 	stopPropagation: false,
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
-	selectType: "link",
+	selectType: "link" as "link" | "path" | "all",
 };
 
 const defaultNameStyle: DefaultNameDataProps = {
@@ -120,8 +140,8 @@ const defaultNameStyle: DefaultNameDataProps = {
 };
 
 class PolygonLayer extends Layer {
-	data: PolygonDataSource[];
-	option: PolygonOption;
+	data: PolygonDataSourceProps[];
+	option: _PolygonOptionProps;
 	path!: d3.GeoPath<any, any>;
 	isHided: boolean;
 	length: number;
@@ -138,12 +158,12 @@ class PolygonLayer extends Layer {
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 
 	constructor(
-		dataSource: PolygonDataSource[],
-		option: PolygonLayerOption = defaultOption
+		dataSource: PolygonDataSourceProps[],
+		option?: PolygonLayerOptionProps
 	) {
 		super(LayerType.PolygonLayer, option);
 		this.data = dataSource;
-		this.option = { ...defaultOption, ...option };
+		this.option = this._combineOption(option);
 		this.clickCount = 0;
 		this.selectIndex = new Map();
 		this.isHided = false;
@@ -153,70 +173,279 @@ class PolygonLayer extends Layer {
 		this._hoverIndex = new Map();
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
-		super.init(g, projection);
-		this.path = d3.geoPath<any, any>().projection(projection);
-		this.container = d3
-			.select(g)
-			.append("g")
-			.attr("id", `polygon-layer-${this.makeRandomId()}`);
-		this.container.selectAll("g").remove();
-
-		this.baseLayer = this.container.append("g");
-		this.selectLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
-		this.hoverLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
-
-		this.draw();
+	private _combineOption(
+		option: PolygonLayerOptionProps = defaultOption
+	): _PolygonOptionProps {
+		const { style = {}, hoverStyle = {}, selectStyle = {}, ...rest } = option;
+		return {
+			...defaultOption,
+			...rest,
+			style: {
+				...defaultOption.style,
+				...style,
+			},
+			hoverStyle: {
+				...defaultOption.style,
+				...hoverStyle,
+			},
+			selectStyle: {
+				...defaultOption.style,
+				...selectStyle,
+			},
+			hasHover: !!hoverStyle.fillColor,
+		};
 	}
 
-	remove(): void {
-		this.container.remove();
+	protected _formatData(
+		data: PolygonDataSourceProps[],
+		dataFilter?: (e: polygonItem, idx: number, index: number) => boolean
+	): [FormatDataProps[], NameDataProps[]] {
+		const nameData: NameDataProps[] = [];
+		const pathData = data.reduce((pre, cur, idx) => {
+			const { data = [], option } = cur;
+			const ids: (string | number)[] = [];
+			const coordinates: [number, number][][] = [];
+			const reverseCoords: [number, number][][] = [];
+			data.forEach((j, innerIndex) => {
+				if (dataFilter) {
+					if (!dataFilter(j, idx, innerIndex)) {
+						return;
+					}
+				}
+				ids.push(j.id);
+				coordinates.push(j.coordinates);
+				if (j.name) {
+					const nameStyle = {
+						...defaultNameStyle,
+						...j.nameStyle,
+					};
+
+					const coordinate = this.projection(
+						d3.polygonCentroid(j.coordinates)
+					)!;
+					nameData.push({
+						name: j.name,
+						fontSize: nameStyle.fontSize,
+						fontWeight: nameStyle.fontWeight,
+						color: nameStyle.color,
+						coordinate,
+						rotate: nameStyle.rotate,
+					});
+				}
+				if (j.reverseCoords) {
+					reverseCoords.push(j.reverseCoords);
+				}
+			});
+			if (coordinates.length === 0) return pre;
+			const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
+			pre.push({
+				type: "Feature",
+				geometry: {
+					type: "Polygon",
+					coordinates: [...coordinates, ...reverseCoords],
+				},
+				properties: {
+					option: {
+						...this.option,
+						...option,
+						style: {
+							...this.option.style,
+							...style,
+						},
+						hoverStyle: {
+							...this.option.hoverStyle,
+							...style,
+							...hoverStyle,
+						},
+						selectStyle: {
+							...this.option.selectStyle,
+							...style,
+							...selectStyle,
+						},
+						hasHover: !!hoverStyle?.fillColor || this.option.hasHover,
+					},
+					ids,
+					originData: cur,
+					index: idx,
+				},
+			});
+
+			return pre;
+		}, [] as FormatDataProps[]);
+		return [pathData, nameData];
 	}
 
-	/**
-	 * 显示当前图层
-	 */
-	show(): void {
-		this.container.style("display", "inline");
+	private _combineIndex<T extends Map<number, Set<number>>>(
+		idxs: T,
+		index: number, // 外部index
+		idx: number // 内部index
+	): T {
+		switch (this._selectType) {
+			case "all": {
+				if (idxs.size === this.length) {
+					idxs = new Map<number, Set<number>>() as T;
+				} else {
+					idxs = this._allIndex as T;
+				}
+				return idxs;
+			}
+			case "path": {
+				if (idxs.has(index)) {
+					idxs.delete(index);
+				} else {
+					idxs.set(index, new Set(this._allIndex.get(index)));
+				}
+				return idxs;
+			}
+			case "link": {
+				if (idxs.has(index)) {
+					const temp = idxs.get(index)!;
+					if (temp.has(idx)) {
+						temp.delete(idx);
+						if (temp.size <= 0) {
+							idxs.delete(index);
+						}
+					} else {
+						idxs.get(index)?.add(idx);
+					}
+				} else {
+					idxs.set(index, new Set([idx]) as Set<number>);
+				}
+				return idxs;
+			}
+			default: {
+				if (idxs.has(index)) {
+					const temp = idxs.get(index)!;
+					if (temp.has(idx)) {
+						temp.delete(idx);
+						if (temp.size <= 0) {
+							idxs.delete(index);
+						}
+					} else {
+						idxs.get(index)?.add(idx);
+					}
+				} else {
+					idxs.set(index, new Set([idx]) as Set<number>);
+				}
+				return idxs;
+			}
+		}
 	}
 
-	/**
-	 * 隐藏当前图层
-	 */
-	hide(): void {
-		this.container.style("display", "none");
-	}
-
-	enableLayerFunc(): void {
-		this.container.style("pointer-events", "inherit");
-	}
-
-	disableLayerFunc(): void {
-		this.container.style("pointer-events", "none");
-	}
-
-	updateData(data: PolygonDataSource[]) {
-		this.data = data;
-
-		this.baseLayer.selectAll("path").remove();
+	private _drawSelectLayer() {
 		this.selectLayer.selectAll("*").remove();
+		const pathGroup = this.selectLayer.append("g");
+		const nameGroup = this.selectLayer.append("g");
+		const [pathData, nameData] = this._formatData(
+			this.data,
+			(e, idx, index) => {
+				if (!this.selectIndex.get(idx)) {
+					return false;
+				} else {
+					return this.selectIndex.get(idx)!.has(index);
+				}
+			}
+		);
+
+		pathGroup
+			.selectAll("path")
+			.data(pathData)
+			.enter()
+			.append("path")
+			.attr("d", this.path)
+			.attr("stroke", l => l.properties.option.selectStyle.strokeColor)
+			.attr("stroke-width", l => l.properties.option.selectStyle.strokeWidth)
+			.attr(
+				"stroke-opacity",
+				d => d.properties.option.selectStyle.strokeOpacity
+			)
+			.attr("fill", l => l.properties.option.selectStyle.fillColor)
+			.attr("fill-opacity", d => d.properties.option.selectStyle.fillOpacity)
+			.attr("stroke-dasharray", l => {
+				if (
+					l.properties.option.selectStyle.strokeType === StrokeLineType.dotted
+				) {
+					return l.properties.option.selectStyle.strokeDashArray;
+				} else {
+					return null;
+				}
+			});
+
+		nameGroup
+			.selectAll("text")
+			.data(nameData)
+			.enter()
+			.append("text")
+			.attr("x", d => d.coordinate[0])
+			.attr("y", d => d.coordinate[1])
+			.attr("font-size", d => d.fontSize)
+			.attr("fill", d => d.color)
+			.attr("font-weight", d => d.fontWeight)
+			.style("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.attr(
+				"transform",
+				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
+			)
+			.text(d => d.name);
+	}
+
+	private _drawHoverLayer() {
 		this.hoverLayer.selectAll("*").remove();
+		const pathGroup = this.hoverLayer.append("g");
+		const nameGroup = this.hoverLayer.append("g");
+		const [pathData, nameData] = this._formatData(
+			this.data,
+			(e, idx, index) => {
+				if (!this._hoverIndex.get(idx)) {
+					return false;
+				} else {
+					return this._hoverIndex.get(idx)!.has(index);
+				}
+			}
+		);
+		pathGroup
+			.selectAll("path")
+			.data(pathData)
+			.enter()
+			.append("path")
+			.attr("d", this.path)
+			.attr("stroke", d => d.properties.option.hoverStyle.strokeColor)
+			.attr("stroke-width", d => d.properties.option.hoverStyle.strokeWidth)
+			.attr("stroke-opacity", d => d.properties.option.hoverStyle.strokeOpacity)
+			.attr("fill", d => d.properties.option.hoverStyle.fillColor)
+			.attr("fill-opacity", d => d.properties.option.hoverStyle.fillOpacity)
+			.attr("stroke-dasharray", l => {
+				if (
+					l.properties.option.hoverStyle.strokeType === StrokeLineType.dotted
+				) {
+					return l.properties.option.hoverStyle.strokeDashArray;
+				} else {
+					return null;
+				}
+			});
 
-		this.selectIndex = new Map();
-
-		this.draw();
+		nameGroup
+			.selectAll("text")
+			.data(nameData)
+			.enter()
+			.append("text")
+			.attr("x", d => d.coordinate[0])
+			.attr("y", d => d.coordinate[1])
+			.attr("font-size", d => d.fontSize)
+			.attr("fill", d => d.color)
+			.attr("font-weight", d => d.fontWeight)
+			.style("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.attr(
+				"transform",
+				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
+			)
+			.text(d => d.name);
 	}
 
-	setSelectType(type: "link" | "path" | "all"): void {
-		this._selectType = type;
-	}
-
-	protected draw() {
-		const [pathData, nameData] = this.formatData(
+	protected _draw() {
+		const [pathData, nameData] = this._formatData(
 			this.data,
 			(e, outerIndex, innerIndex) => {
 				if (this._allIndex.has(outerIndex)) {
@@ -238,18 +467,18 @@ class PolygonLayer extends Layer {
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", d => d.properties.option.strokeColor)
-			.attr("stroke-width", d => d.properties.option.strokeWidth)
+			.attr("stroke", d => d.properties.option.style.strokeColor)
+			.attr("stroke-width", d => d.properties.option.style.strokeWidth)
 			.attr("stroke-dasharray", d => {
-				if (d.properties.option.strokeType === StrokeLineType.dotted) {
-					return d.properties.option.strokeDashArray;
+				if (d.properties.option.style.strokeType === StrokeLineType.dotted) {
+					return d.properties.option.style.strokeDashArray;
 				} else {
 					return null;
 				}
 			})
-			.attr("stroke-opacity", d => d.properties.option.strokeOpacity)
-			.attr("fill", d => d.properties.option.fillColor)
-			.attr("fill-opacity", d => d.properties.option.fillOpacity)
+			.attr("stroke-opacity", d => d.properties.option.style.strokeOpacity)
+			.attr("fill", d => d.properties.option.style.fillColor)
+			.attr("fill-opacity", d => d.properties.option.style.fillOpacity)
 			.on("click", (e, d, ...args: any) => {
 				if (d.properties.option.stopPropagation) {
 					e.stopPropagation();
@@ -277,12 +506,12 @@ class PolygonLayer extends Layer {
 						const clickFn = d.properties.option.onClick;
 						const selectable = d.properties.option.selectable;
 						if (selectable) {
-							this.selectIndex = this.combineIndex(
+							this.selectIndex = this._combineIndex(
 								this.selectIndex,
 								d.properties.index,
 								index
 							);
-							this.drawSelectLayer();
+							this._drawSelectLayer();
 						}
 						if (clickFn) {
 							clickFn({
@@ -320,7 +549,7 @@ class PolygonLayer extends Layer {
 			})
 			.on("mousemove", (e, d) => {
 				const { coordinates } = d.geometry;
-				const hasHover = d.properties.option.hoverColor;
+				const { hasHover } = d.properties.option;
 				if (hasHover) {
 					const targetCoord = this.projection.invert!(
 						d3.pointer(e, this.container.node())
@@ -328,14 +557,14 @@ class PolygonLayer extends Layer {
 					const index = coordinates.findIndex(i => {
 						return d3.polygonContains(i, targetCoord!);
 					});
-					this._hoverIndex = this.combineIndex(
+					this._hoverIndex = this._combineIndex(
 						new Map(),
 						d.properties.index,
 						index
 					);
 
 					if (index > -1) {
-						this.drawHoverLayer();
+						this._drawHoverLayer();
 					}
 				}
 			})
@@ -395,226 +624,69 @@ class PolygonLayer extends Layer {
 			.text(d => d.name);
 	}
 
-	private combineIndex<T extends Map<number, Set<number>>>(
-		idxs: T,
-		index: number, // 外部index
-		idx: number // 内部index
-	): T {
-		switch (this._selectType) {
-			case "all": {
-				if (idxs.size === this.length) {
-					idxs = new Map<number, Set<number>>() as T;
-				} else {
-					idxs = this._allIndex as T;
-				}
-				return idxs;
-			}
-			case "path": {
-				if (idxs.has(index)) {
-					idxs.delete(index);
-				} else {
-					idxs.set(index, new Set(this._allIndex.get(index)));
-				}
-				return idxs;
-			}
-			case "link": {
-				if (idxs.has(index)) {
-					const temp = idxs.get(index)!;
-					if (temp.has(idx)) {
-						temp.delete(idx);
-						if (temp.size <= 0) {
-							idxs.delete(index);
-						}
-					} else {
-						idxs.get(index)?.add(idx);
-					}
-				} else {
-					idxs.set(index, new Set([idx]) as Set<number>);
-				}
-				return idxs;
-			}
-			default: {
-				if (idxs.has(index)) {
-					const temp = idxs.get(index)!;
-					if (temp.has(idx)) {
-						temp.delete(idx);
-						if (temp.size <= 0) {
-							idxs.delete(index);
-						}
-					} else {
-						idxs.get(index)?.add(idx);
-					}
-				} else {
-					idxs.set(index, new Set([idx]) as Set<number>);
-				}
-				return idxs;
-			}
-		}
+	init(g: SVGGElement, projection: d3.GeoProjection) {
+		super.init(g, projection);
+		this.path = d3.geoPath<any, any>().projection(projection);
+		this.container = d3
+			.select(g)
+			.append("g")
+			.attr("id", `polygon-layer-${this.makeRandomId()}`);
+		this.container.selectAll("g").remove();
+
+		this.baseLayer = this.container.append("g");
+		this.selectLayer = this.container
+			.append("g")
+			.style("pointer-events", "none");
+		this.hoverLayer = this.container
+			.append("g")
+			.style("pointer-events", "none");
+
+		this._draw();
 	}
 
-	private drawSelectLayer() {
+	remove(): void {
+		this.container.remove();
+	}
+
+	/**
+	 * 显示当前图层
+	 */
+	show(): void {
+		this.container.style("display", "inline");
+	}
+
+	/**
+	 * 隐藏当前图层
+	 */
+	hide(): void {
+		this.container.style("display", "none");
+	}
+
+	enableLayerFunc(): void {
+		this.container.style("pointer-events", "inherit");
+	}
+
+	disableLayerFunc(): void {
+		this.container.style("pointer-events", "none");
+	}
+
+	updateData(data: PolygonDataSourceProps[]) {
+		this.data = data;
+
+		this.baseLayer.selectAll("path").remove();
 		this.selectLayer.selectAll("*").remove();
-		const pathGroup = this.selectLayer.append("g");
-		const nameGroup = this.selectLayer.append("g");
-		const [pathData, nameData] = this.formatData(this.data, (e, idx, index) => {
-			if (!this.selectIndex.get(idx)) {
-				return false;
-			} else {
-				return this.selectIndex.get(idx)!.has(index);
-			}
-		});
-
-		pathGroup
-			.selectAll("path")
-			.data(pathData)
-			.enter()
-			.append("path")
-			.attr("d", this.path)
-			.attr("stroke", l => l.properties.option.strokeColor)
-			.attr("stroke-width", l => l.properties.option.strokeWidth)
-			.attr("stroke-opacity", d => d.properties.option.strokeOpacity)
-			.attr("fill", l => l.properties.option.selectColor)
-			.attr("stroke-dasharray", l => {
-				if (l.properties.option.strokeType === StrokeLineType.dotted) {
-					return l.properties.option.strokeDashArray;
-				} else {
-					return null;
-				}
-			});
-
-		nameGroup
-			.selectAll("text")
-			.data(nameData)
-			.enter()
-			.append("text")
-			.attr("x", d => d.coordinate[0])
-			.attr("y", d => d.coordinate[1])
-			.attr("font-size", d => d.fontSize)
-			.attr("fill", d => d.color)
-			.attr("font-weight", d => d.fontWeight)
-			.style("text-anchor", "middle")
-			.attr("dominant-baseline", "central")
-			.attr(
-				"transform",
-				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
-			)
-			.text(d => d.name);
-	}
-
-	private drawHoverLayer() {
 		this.hoverLayer.selectAll("*").remove();
-		const pathGroup = this.hoverLayer.append("g");
-		const nameGroup = this.hoverLayer.append("g");
-		const [pathData, nameData] = this.formatData(this.data, (e, idx, index) => {
-			if (!this._hoverIndex.get(idx)) {
-				return false;
-			} else {
-				return this._hoverIndex.get(idx)!.has(index);
-			}
-		});
 
-		pathGroup
-			.selectAll("path")
-			.data(pathData)
-			.enter()
-			.append("path")
-			.attr("d", this.path)
-			.attr("stroke", d => d.properties.option.strokeColor)
-			.attr("stroke-width", d => d.properties.option.strokeWidth)
-			.attr("stroke-opacity", d => d.properties.option.strokeOpacity)
-			.attr("fill", d => d.properties.option.hoverColor)
-			.attr("fill-opacity", d => d.properties.option.fillOpacity)
-			.attr("stroke-dasharray", l => {
-				if (l.properties.option.strokeType === StrokeLineType.dotted) {
-					return l.properties.option.strokeDashArray;
-				} else {
-					return null;
-				}
-			});
+		this.selectIndex = new Map();
 
-		nameGroup
-			.selectAll("text")
-			.data(nameData)
-			.enter()
-			.append("text")
-			.attr("x", d => d.coordinate[0])
-			.attr("y", d => d.coordinate[1])
-			.attr("font-size", d => d.fontSize)
-			.attr("fill", d => d.color)
-			.attr("font-weight", d => d.fontWeight)
-			.style("text-anchor", "middle")
-			.attr("dominant-baseline", "central")
-			.attr(
-				"transform",
-				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
-			)
-			.text(d => d.name);
+		this._draw();
 	}
 
-	protected formatData(
-		data: PolygonDataSource[],
-		dataFilter?: (e: polygonItem, idx: number, index: number) => boolean
-	): [FormatDataProps[], NameDataProps[]] {
-		const nameData: NameDataProps[] = [];
-		const pathData = data.reduce((pre, cur, idx) => {
-			const { data = [], option = {} } = cur;
-			const ids: (string | number)[] = [];
-			const coordinates: [number, number][][] = [];
-			const reverseCoords: [number, number][][] = [];
-			data.forEach((j, innerIndex) => {
-				if (dataFilter) {
-					if (!dataFilter(j, idx, innerIndex)) {
-						return;
-					}
-				}
-				ids.push(j.id);
-				coordinates.push(j.coordinates);
-				if (j.name) {
-					const nameStyle = {
-						...defaultNameStyle,
-						...j.nameStyle,
-					};
-
-					const coordinate = this.projection(
-						d3.polygonCentroid(j.coordinates)
-					)!;
-					nameData.push({
-						name: j.name,
-						fontSize: nameStyle.fontSize,
-						fontWeight: nameStyle.fontWeight,
-						color: nameStyle.color,
-						coordinate,
-						rotate: nameStyle.rotate,
-					});
-				}
-				if (j.reverseCoords) {
-					reverseCoords.push(j.reverseCoords);
-				}
-			});
-			if (coordinates.length === 0) return pre;
-			pre.push({
-				type: "Feature",
-				geometry: {
-					type: "Polygon",
-					coordinates: [...coordinates, ...reverseCoords],
-				},
-				properties: {
-					option: {
-						...this.option,
-						...option,
-					},
-					ids,
-					originData: cur,
-					index: idx,
-				},
-			});
-
-			return pre;
-		}, [] as FormatDataProps[]);
-		return [pathData, nameData];
+	setSelectType(type: "link" | "path" | "all"): void {
+		this._selectType = type;
 	}
 }
 
-export type { PolygonDataSource };
+export type { PolygonDataSourceProps };
 
 export { PolygonLayer as default, StrokeLineType };

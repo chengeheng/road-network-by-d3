@@ -9,16 +9,16 @@ import {
 import {
 	LabelDataSourceProps,
 	PointDataSource,
-	PolygonDataSource,
-	PolyLineDataSource,
+	PolygonDataSourceProps,
+	PolyLineDataSourceProps,
 } from "./Layers";
 
 import Map from "./Map";
 
 export type {
 	PointDataSource,
-	PolygonDataSource,
-	PolyLineDataSource,
+	PolygonDataSourceProps,
+	PolyLineDataSourceProps,
 	LabelDataSourceProps,
 };
 

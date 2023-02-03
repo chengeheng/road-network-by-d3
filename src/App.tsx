@@ -9,8 +9,8 @@ import {
 	PolyLineLayer,
 	LabelLayer,
 	PointDataSource,
-	PolygonDataSource,
-	PolyLineDataSource,
+	PolygonDataSourceProps,
+	PolyLineDataSourceProps,
 	StrokeLineType,
 	LabelDataSourceProps,
 } from "./map";
@@ -22,7 +22,7 @@ const focusCoords: [number, number][] = [
 	[118.391047, 31.343258],
 	[118.391213, 31.343501],
 ];
-const focusPolygonsData: PolygonDataSource = {
+const focusPolygonsData: PolygonDataSourceProps = {
 	data: [
 		{
 			id: 12,
@@ -30,11 +30,15 @@ const focusPolygonsData: PolygonDataSource = {
 		},
 	],
 	option: {
-		strokeColor: "#ffd000",
-		strokeWidth: 0.5,
+		style: {
+			strokeColor: "#ffd000",
+			strokeWidth: 0.5,
+			fillColor: "#ffd000",
+		},
+		hoverStyle: {
+			fillColor: "#b3ff00",
+		},
 		selectable: true,
-		fillColor: "#ffd000",
-		hoverColor: "#b3ff00",
 	},
 };
 
@@ -96,7 +100,7 @@ const oldPointsData: PointDataSource[] = [
 		},
 	},
 ];
-const oldPolyLinesData: PolyLineDataSource[] = [
+const oldPolyLinesData: PolyLineDataSourceProps[] = [
 	{
 		data: [
 			{
@@ -117,18 +121,25 @@ const oldPolyLinesData: PolyLineDataSource[] = [
 			},
 		],
 		option: {
-			strokeColor: "#1176f0",
-			strokeWidth: 1,
+			style: {
+				strokeColor: "#1176f0",
+				strokeWidth: 1,
+				strokeType: StrokeLineType.dotted,
+			},
+			hoverStyle: {
+				strokeColor: "#333333",
+			},
+			selectStyle: {
+				strokeColor: "red",
+			},
 			selectable: true,
-			hoverColor: "#333333",
-			strokeType: StrokeLineType.dotted,
 			onClick: (e: any) => {
 				console.log(e);
 			},
 		},
 	},
 ];
-const oldPolygonsData: PolygonDataSource[] = [
+const oldPolygonsData: PolygonDataSourceProps[] = [
 	focusPolygonsData,
 	{
 		data: [
@@ -168,10 +179,18 @@ const oldPolygonsData: PolygonDataSource[] = [
 			},
 		],
 		option: {
-			strokeColor: "#1176f0",
-			strokeWidth: 0.5,
+			style: {
+				strokeColor: "#1176f0",
+				strokeWidth: 0.5,
+			},
+			hoverStyle: {
+				fillColor: "#333333",
+			},
+			selectStyle: {
+				fillColor: "red",
+				strokeColor: "yellow",
+			},
 			selectable: true,
-			hoverColor: "#333333",
 			onClick: (e: any) => {
 				console.log(e);
 			},
@@ -194,7 +213,7 @@ const newPointsData: PointDataSource[] = [
 		},
 	},
 ];
-const newPolyLinesData: PolyLineDataSource[] = [
+const newPolyLinesData: PolyLineDataSourceProps[] = [
 	{
 		data: [
 			{
@@ -215,11 +234,15 @@ const newPolyLinesData: PolyLineDataSource[] = [
 			},
 		],
 		option: {
-			strokeColor: "#1176f0",
-			strokeWidth: 1,
+			style: {
+				strokeColor: "#1176f0",
+				strokeWidth: 1,
+				strokeType: StrokeLineType.dotted,
+			},
+			hoverStyle: {
+				strokeColor: "#28B9F0",
+			},
 			selectable: true,
-			hoverColor: "#28B9F0",
-			strokeType: StrokeLineType.dotted,
 			onClick: (e: any) => {
 				console.log(e);
 			},
@@ -251,7 +274,7 @@ const newLabelData: LabelDataSourceProps[] = [
 		},
 	},
 ];
-const newPolygonsData: PolygonDataSource[] = [
+const newPolygonsData: PolygonDataSourceProps[] = [
 	focusPolygonsData,
 	{
 		data: [
@@ -282,10 +305,14 @@ const newPolygonsData: PolygonDataSource[] = [
 			},
 		],
 		option: {
-			strokeColor: "#1176f0",
-			strokeWidth: 0.5,
+			style: {
+				strokeColor: "#1176f0",
+				strokeWidth: 0.5,
+			},
+			hoverStyle: {
+				fillColor: "#28B9F0",
+			},
 			selectable: true,
-			hoverColor: "#28B9F0",
 			onClick: (e: any) => {
 				console.log(e);
 			},

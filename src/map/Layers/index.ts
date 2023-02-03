@@ -2,17 +2,17 @@ import Layer, { LayerOptionProps, LayerType } from "./Layer";
 import LabelLayer, { LabelDataSourceProps } from "./LabelLayer";
 import PointLayer, { PointDataSource } from "./PointLayer";
 import PolygonLayer, {
-	PolygonDataSource,
+	PolygonDataSourceProps,
 	StrokeLineType,
 } from "./PolygonLayer";
-import PolyLineLayer, { PolyLineDataSource } from "./PolyLineLayer";
+import PolyLineLayer, { PolyLineDataSourceProps } from "./PolyLineLayer";
 
 export type {
 	LayerOptionProps,
 	LabelDataSourceProps,
 	PointDataSource,
-	PolygonDataSource,
-	PolyLineDataSource,
+	PolygonDataSourceProps,
+	PolyLineDataSourceProps,
 };
 export {
 	Layer as default,

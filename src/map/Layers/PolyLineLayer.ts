@@ -12,15 +12,20 @@ enum StrokeLineType {
 	solid = "solid",
 }
 
-interface PolyLineLayerOption extends LayerOptionProps {
+interface StyleProps {
 	strokeColor?: string;
 	strokeWidth?: number;
 	strokeOpacity?: number;
 	strokeType?: StrokeLineType;
 	strokeDashArray?: number[];
-	selectColor?: string;
-	selectable?: boolean;
-	hoverColor?: string;
+}
+
+interface PolyLineLayerOptionProps extends LayerOptionProps {
+	style?: StyleProps;
+	selectStyle?: StyleProps;
+	hoverStyle?: StyleProps;
+
+	selectable: boolean;
 	stopPropagation?: boolean;
 	onClick?: Function;
 	onRightClick?: Function;
@@ -28,15 +33,35 @@ interface PolyLineLayerOption extends LayerOptionProps {
 	selectType?: "link" | "path" | "all";
 }
 
-interface PolyLineOption extends PolyLineLayerOption {
-	strokeColor: string;
-	strokeWidth: number;
-	strokeOpacity: number;
-	strokeType: StrokeLineType;
-	strokeDashArray: number[];
-	selectColor: string;
+interface PolyLineDataSourceProps {
+	data: polyLineItem[];
+	option?: PolyLineLayerOptionProps;
+}
+
+interface _PolyLineOptionProps {
+	style: {
+		strokeColor: string;
+		strokeWidth: number;
+		strokeOpacity: number;
+		strokeType: StrokeLineType;
+		strokeDashArray: number[];
+	};
+	selectStyle: {
+		strokeColor: string;
+		strokeWidth: number;
+		strokeOpacity: number;
+		strokeType: StrokeLineType;
+		strokeDashArray: number[];
+	};
+	hoverStyle: {
+		strokeColor: string;
+		strokeWidth: number;
+		strokeOpacity: number;
+		strokeType: StrokeLineType;
+		strokeDashArray: number[];
+	};
+	hasHover: boolean;
 	selectable: boolean;
-	hoverColor: string;
 	stopPropagation: boolean;
 	onClick: Function;
 	onRightClick: Function;
@@ -44,30 +69,25 @@ interface PolyLineOption extends PolyLineLayerOption {
 	selectType: "link" | "path" | "all";
 }
 
-interface PolyLineDataSource {
-	data: polyLineItem[];
-	option?: PolyLineLayerOption;
-}
-
-const defaultOption: PolyLineOption = {
-	strokeColor: "#333333",
-	strokeWidth: 1,
-	strokeOpacity: 1,
-	strokeType: StrokeLineType.solid,
-	strokeDashArray: [2, 3],
-	selectColor: "yellow",
+const defaultOption = {
+	style: {
+		strokeColor: "#333333",
+		strokeWidth: 1,
+		strokeOpacity: 1,
+		strokeType: StrokeLineType.solid,
+		strokeDashArray: [2, 3],
+	},
 	selectable: false,
-	hoverColor: "green",
 	stopPropagation: false,
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
-	selectType: "link",
+	selectType: "link" as "link" | "path" | "all",
 };
 
 class PolyLineLayer extends Layer {
-	data: PolyLineDataSource[];
-	option: PolyLineOption;
+	data: PolyLineDataSourceProps[];
+	option: _PolyLineOptionProps;
 	path!: d3.GeoPath<any, any>;
 	length: number;
 
@@ -75,92 +95,57 @@ class PolyLineLayer extends Layer {
 	selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	hoverLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 
-	private clickCount: number;
-	private clickTimer: NodeJS.Timeout | undefined;
-	private selectIndex: Map<number, Set<number>>;
+	private _clickCount: number;
+	private _clickTimer: NodeJS.Timeout | undefined;
+	private _selectIndex: Map<number, Set<number>>;
 	private _hoverIndex: Map<number, Set<number>>;
 	private _selectType: "link" | "path" | "all"; // 选中的类型
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 
 	constructor(
-		dataSource: PolyLineDataSource[],
-		option: PolyLineLayerOption = defaultOption
+		dataSource: PolyLineDataSourceProps[],
+		option?: PolyLineLayerOptionProps
 	) {
 		super(LayerType.PolygonLayer, option);
 		this.data = dataSource;
-		this.option = { ...defaultOption, ...option };
-		this.clickCount = 0;
-		this.selectIndex = new Map();
+		this.option = this._combineOption(option);
+		this._clickCount = 0;
+		this._selectIndex = new Map();
 		this._selectType = this.option.selectType;
 		this._allIndex = new Map();
 		this._hoverIndex = new Map();
 		this.length = dataSource.length;
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
-		super.init(g, projection);
-		this.path = d3.geoPath<any, any>().projection(projection);
-		this.container = d3
-			.select(g)
-			.append("g")
-			.attr("id", `polyline-layer-${this.makeRandomId()}`);
-		this.container.selectAll("g").remove();
+	private _combineOption(
+		option: PolyLineLayerOptionProps = defaultOption
+	): _PolyLineOptionProps {
+		const { style = {}, hoverStyle = {}, selectStyle = {}, ...rest } = option;
 
-		this.baseLayer = this.container.append("g");
-		this.selectLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
-		this.hoverLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
-
-		this.draw();
-	}
-
-	remove(): void {
-		this.container.remove();
-	}
-
-	/**
-	 * 显示当前图层
-	 */
-	show(): void {
-		this.container.style("display", "inline");
-	}
-
-	/**
-	 * 隐藏当前图层
-	 */
-	hide(): void {
-		this.container.style("display", "none");
-	}
-
-	enableLayerFunc(): void {
-		this.container.style("pointer-events", "inherit");
-	}
-
-	disableLayerFunc(): void {
-		this.container.style("pointer-events", "none");
-	}
-
-	updateData(data: PolyLineDataSource[]) {
-		this.data = data;
-		this.selectIndex = new Map();
-		this.baseLayer.selectAll("path").remove();
-		this.selectLayer.selectAll("path").remove();
-		this.hoverLayer.selectAll("path").remove();
-		this.draw();
-	}
-
-	setSelectType(type: "link" | "path" | "all"): void {
-		this._selectType = type;
+		return {
+			...defaultOption,
+			...rest,
+			style: {
+				...defaultOption.style,
+				...style,
+			},
+			hoverStyle: {
+				...defaultOption.style,
+				...hoverStyle,
+			},
+			selectStyle: {
+				...defaultOption.style,
+				...selectStyle,
+			},
+			hasHover: !!hoverStyle.strokeColor,
+		};
 	}
 
 	protected draw() {
 		this.baseLayer
 			.selectAll("path")
 			.data(
-				this.formatData(this.data, (e, outerIndex, innerIndex) => {
+				this._formatData(this.data, (e, outerIndex, innerIndex) => {
 					if (this._allIndex.has(outerIndex)) {
 						this._allIndex.get(outerIndex)?.add(innerIndex);
 					} else {
@@ -172,11 +157,11 @@ class PolyLineLayer extends Layer {
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", d => d.properties.option.strokeColor)
-			.attr("stroke-width", d => d.properties.option.strokeWidth)
+			.attr("stroke", d => d.properties.option.style?.strokeColor!)
+			.attr("stroke-width", d => d.properties.option.style?.strokeWidth!)
 			.attr("stroke-dasharray", d => {
-				if (d.properties.option.strokeType === StrokeLineType.dotted) {
-					return d.properties.option.strokeDashArray;
+				if (d.properties.option.style.strokeType === StrokeLineType.dotted) {
+					return d.properties.option.style.strokeDashArray;
 				} else {
 					return null;
 				}
@@ -186,14 +171,14 @@ class PolyLineLayer extends Layer {
 				if (d.properties.option.stopPropagation) {
 					e.stopPropagation();
 				}
-				this.clickCount++;
+				this._clickCount++;
 				const originData = d.properties.originData;
 				const index = d.geometry.coordinates.findIndex(i =>
 					this.isPointInLine(
 						i,
 						d3.pointer(e, this.container.node())!,
 						this.projection,
-						d.properties.option.strokeWidth
+						d.properties.option.style.strokeWidth
 					)
 				);
 				let originalParams: any;
@@ -204,20 +189,20 @@ class PolyLineLayer extends Layer {
 				} else {
 					originalParams = originData?.data[index];
 				}
-				clearTimeout(this.clickTimer);
-				this.clickTimer = setTimeout(() => {
-					if (this.clickCount % 2 === 1) {
-						this.clickCount--;
+				clearTimeout(this._clickTimer);
+				this._clickTimer = setTimeout(() => {
+					if (this._clickCount % 2 === 1) {
+						this._clickCount--;
 						const clickFn = d.properties.option.onClick;
 						const selectable = d.properties.option.selectable;
 						if (selectable) {
-							this.selectIndex = this.combineIndex(
-								this.selectIndex,
+							this._selectIndex = this.combineIndex(
+								this._selectIndex,
 								d.properties.index,
 								index
 							);
 							this.selectLayer.select("*").remove();
-							this.drawSelectLayer();
+							this._drawSelectLayer();
 						}
 						if (clickFn) {
 							clickFn({
@@ -226,15 +211,15 @@ class PolyLineLayer extends Layer {
 								target: {
 									index,
 									data: originalParams,
-									selected: this.selectIndex.get(d.properties.index)
-										? this.selectIndex.get(d.properties.index)!.has(index)
+									selected: this._selectIndex.get(d.properties.index)
+										? this._selectIndex.get(d.properties.index)!.has(index)
 										: false,
 								},
 								originData,
 							});
 						}
 					} else {
-						this.clickCount = 0;
+						this._clickCount = 0;
 						const dblClickFn = d.properties.option.onDbClick;
 						if (dblClickFn) {
 							dblClickFn({
@@ -243,8 +228,8 @@ class PolyLineLayer extends Layer {
 								target: {
 									index,
 									data: originalParams,
-									selected: this.selectIndex.get(d.properties.index)
-										? this.selectIndex.get(d.properties.index)!.has(index)
+									selected: this._selectIndex.get(d.properties.index)
+										? this._selectIndex.get(d.properties.index)!.has(index)
 										: false,
 								},
 								originData,
@@ -255,14 +240,15 @@ class PolyLineLayer extends Layer {
 			})
 			.on("mousemove", (e, d) => {
 				const { coordinates } = d.geometry;
-				const hasHover = d.properties.option.hoverColor;
+				const hasHover = d.properties.option.hasHover;
+
 				if (hasHover) {
 					const index = coordinates.findIndex(i =>
 						this.isPointInLine(
 							i,
 							d3.pointer(e, this.container.node())!,
 							this.projection,
-							d.properties.option.strokeWidth
+							d.properties.option.style.strokeWidth
 						)
 					);
 
@@ -273,7 +259,7 @@ class PolyLineLayer extends Layer {
 					);
 
 					if (index > -1) {
-						this.drawHoverLayer();
+						this._drawHoverLayer();
 					}
 				}
 			})
@@ -286,7 +272,7 @@ class PolyLineLayer extends Layer {
 						i,
 						d3.pointer(e, this.container.node())!,
 						this.projection,
-						d.properties.option.strokeWidth
+						d.properties.option.style.strokeWidth
 					)
 				);
 				let originalParams: any;
@@ -305,8 +291,8 @@ class PolyLineLayer extends Layer {
 						target: {
 							index,
 							data: originalParams,
-							selected: this.selectIndex.get(d.properties.index)
-								? this.selectIndex.get(d.properties.index)!.has(index)
+							selected: this._selectIndex.get(d.properties.index)
+								? this._selectIndex.get(d.properties.index)!.has(index)
 								: false,
 						},
 						originData: d.properties.originData,
@@ -315,67 +301,73 @@ class PolyLineLayer extends Layer {
 			});
 	}
 
-	drawSelectLayer() {
+	private _drawSelectLayer() {
 		this.selectLayer.selectAll("*").remove();
-		const pathData = this.formatData(this.data, (e, idx, index) => {
-			if (!this.selectIndex.get(idx)) {
+		const pathData = this._formatData(this.data, (e, idx, index) => {
+			if (!this._selectIndex.get(idx)) {
 				return false;
 			} else {
-				return this.selectIndex.get(idx)!.has(index);
+				return this._selectIndex.get(idx)!.has(index);
 			}
 		});
+		console.log(this._selectIndex, pathData);
 		this.selectLayer
 			.selectAll("path")
 			.data(pathData)
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", l => l.properties.option.selectColor)
-			.attr("stroke-width", l => l.properties.option.strokeWidth)
+			.attr("stroke", l => l.properties.option.selectStyle.strokeColor)
+			.attr("stroke-width", l => l.properties.option.selectStyle.strokeWidth)
 			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
-				if (l.properties.option.strokeType === StrokeLineType.dotted) {
-					return l.properties.option.strokeDashArray;
+				if (
+					l.properties.option.selectStyle.strokeType === StrokeLineType.dotted
+				) {
+					return l.properties.option.selectStyle.strokeDashArray;
 				} else {
 					return null;
 				}
 			});
 	}
 
-	private drawHoverLayer() {
+	private _drawHoverLayer() {
 		this.hoverLayer.selectAll("*").remove();
-		const pathData = this.formatData(this.data, (e, idx, index) => {
+		const pathData = this._formatData(this.data, (e, idx, index) => {
 			if (!this._hoverIndex.get(idx)) {
 				return false;
 			} else {
 				return this._hoverIndex.get(idx)!.has(index);
 			}
 		});
+
 		this.hoverLayer
 			.selectAll("path")
 			.data(pathData)
 			.enter()
 			.append("path")
 			.attr("d", this.path)
-			.attr("stroke", l => l.properties.option.hoverColor)
-			.attr("stroke-width", l => l.properties.option.strokeWidth)
+			.attr("stroke", l => l.properties.option.hoverStyle.strokeColor)
+			.attr("stroke-width", l => l.properties.option.hoverStyle.strokeWidth)
 			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
-				if (l.properties.option.strokeType === StrokeLineType.dotted) {
-					return l.properties.option.strokeDashArray;
+				if (
+					l.properties.option.hoverStyle.strokeType === StrokeLineType.dotted
+				) {
+					return l.properties.option.hoverStyle.strokeDashArray;
 				} else {
 					return null;
 				}
 			});
 	}
 
-	private formatData(
-		data: PolyLineDataSource[],
+	private _formatData(
+		data: PolyLineDataSourceProps[],
 		dataFilter?: (e: polyLineItem, idx: number, index: number) => boolean
 	) {
 		return data.reduce(
 			(pre, cur, idx) => {
-				const { data = [], option = {} } = cur;
+				const { data = [], option } = cur;
 				const ids: (string | number)[] = [];
 				const coordinates: [number, number][][] = [];
 				data.forEach((j, innerIndex) => {
@@ -387,6 +379,7 @@ class PolyLineLayer extends Layer {
 					ids.push(j.id);
 					coordinates.push(j.coordinates);
 				});
+				const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
 				pre.push({
 					type: "Feature",
 					geometry: {
@@ -397,7 +390,23 @@ class PolyLineLayer extends Layer {
 						option: {
 							...this.option,
 							...option,
+							style: {
+								...this.option.style,
+								...style,
+							},
+							hoverStyle: {
+								...this.option.hoverStyle,
+								...style,
+								...hoverStyle,
+							},
+							selectStyle: {
+								...this.option.selectStyle,
+								...style,
+								...selectStyle,
+							},
+							hasHover: !!hoverStyle?.strokeColor || this.option.hasHover,
 						},
+
 						ids,
 						originData: cur,
 						index: idx,
@@ -413,9 +422,9 @@ class PolyLineLayer extends Layer {
 					coordinates: [number, number][][];
 				};
 				properties: {
-					option: PolyLineOption;
+					option: _PolyLineOptionProps;
 					ids: (string | number)[];
-					originData: PolyLineDataSource;
+					originData: PolyLineDataSourceProps;
 					[propName: string]: any;
 				};
 			}>
@@ -493,8 +502,67 @@ class PolyLineLayer extends Layer {
 		}, [] as [number, number][]);
 		return d3.polygonContains(lineAreas, point);
 	}
+
+	init(g: SVGGElement, projection: d3.GeoProjection) {
+		super.init(g, projection);
+		this.path = d3.geoPath<any, any>().projection(projection);
+		this.container = d3
+			.select(g)
+			.append("g")
+			.attr("id", `polyline-layer-${this.makeRandomId()}`);
+		this.container.selectAll("g").remove();
+
+		this.baseLayer = this.container.append("g");
+		this.selectLayer = this.container
+			.append("g")
+			.style("pointer-events", "none");
+		this.hoverLayer = this.container
+			.append("g")
+			.style("pointer-events", "none");
+
+		this.draw();
+	}
+
+	remove(): void {
+		this.container.remove();
+	}
+
+	/**
+	 * 显示当前图层
+	 */
+	show(): void {
+		this.container.style("display", "inline");
+	}
+
+	/**
+	 * 隐藏当前图层
+	 */
+	hide(): void {
+		this.container.style("display", "none");
+	}
+
+	enableLayerFunc(): void {
+		this.container.style("pointer-events", "inherit");
+	}
+
+	disableLayerFunc(): void {
+		this.container.style("pointer-events", "none");
+	}
+
+	updateData(data: PolyLineDataSourceProps[]) {
+		this.data = data;
+		this._selectIndex = new Map();
+		this.baseLayer.selectAll("path").remove();
+		this.selectLayer.selectAll("path").remove();
+		this.hoverLayer.selectAll("path").remove();
+		this.draw();
+	}
+
+	setSelectType(type: "link" | "path" | "all"): void {
+		this._selectType = type;
+	}
 }
 
-export type { PolyLineDataSource };
+export type { PolyLineDataSourceProps };
 
 export { PolyLineLayer as default, StrokeLineType };
