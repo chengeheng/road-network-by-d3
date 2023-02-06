@@ -146,9 +146,9 @@ class PolygonLayer extends Layer {
 	isHided: boolean;
 	length: number;
 
-	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
-	selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
-	hoverLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _hoverLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 
 	private clickCount: number;
 	private clickTimer: NodeJS.Timeout | undefined;
@@ -254,9 +254,9 @@ class PolygonLayer extends Layer {
 	}
 
 	private _drawSelectLayer() {
-		this.selectLayer.selectAll("*").remove();
-		const pathGroup = this.selectLayer.append("g");
-		const nameGroup = this.selectLayer.append("g");
+		this._selectLayer.selectAll("*").remove();
+		const pathGroup = this._selectLayer.append("g");
+		const nameGroup = this._selectLayer.append("g");
 		const [pathData, nameData] = this._formatData(
 			this.data,
 			(e, idx, index) => {
@@ -312,9 +312,9 @@ class PolygonLayer extends Layer {
 	}
 
 	private _drawHoverLayer() {
-		this.hoverLayer.selectAll("*").remove();
-		const pathGroup = this.hoverLayer.append("g");
-		const nameGroup = this.hoverLayer.append("g");
+		this._hoverLayer.selectAll("*").remove();
+		const pathGroup = this._hoverLayer.append("g");
+		const nameGroup = this._hoverLayer.append("g");
 		const [pathData, nameData] = this._formatData(
 			this.data,
 			(e, idx, index) => {
@@ -456,8 +456,8 @@ class PolygonLayer extends Layer {
 				return true;
 			}
 		);
-		const pathGroup = this.baseLayer.append("g");
-		const nameGroup = this.baseLayer
+		const pathGroup = this._baseLayer.append("g");
+		const nameGroup = this._baseLayer
 			.append("g")
 			.style("pointer-events", "none");
 
@@ -569,7 +569,7 @@ class PolygonLayer extends Layer {
 				}
 			})
 			.on("mouseleave", () => {
-				this.hoverLayer.selectAll("*").remove();
+				this._hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {
 				const targetCoord = this.projection.invert!(
@@ -633,11 +633,11 @@ class PolygonLayer extends Layer {
 			.attr("id", `polygon-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
-		this.baseLayer = this.container.append("g");
-		this.selectLayer = this.container
+		this._baseLayer = this.container.append("g");
+		this._selectLayer = this.container
 			.append("g")
 			.style("pointer-events", "none");
-		this.hoverLayer = this.container
+		this._hoverLayer = this.container
 			.append("g")
 			.style("pointer-events", "none");
 
@@ -673,9 +673,9 @@ class PolygonLayer extends Layer {
 	updateData(data: PolygonDataSourceProps[]) {
 		this.data = data;
 
-		this.baseLayer.selectAll("path").remove();
-		this.selectLayer.selectAll("*").remove();
-		this.hoverLayer.selectAll("*").remove();
+		this._baseLayer.selectAll("path").remove();
+		this._selectLayer.selectAll("*").remove();
+		this._hoverLayer.selectAll("*").remove();
 
 		this.selectIndex = new Map();
 

@@ -91,9 +91,9 @@ class PolyLineLayer extends Layer {
 	path!: d3.GeoPath<any, any>;
 	length: number;
 
-	baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
-	selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
-	hoverLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _hoverLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 
 	private _clickCount: number;
 	private _clickTimer: NodeJS.Timeout | undefined;
@@ -142,7 +142,7 @@ class PolyLineLayer extends Layer {
 	}
 
 	protected _draw() {
-		this.baseLayer
+		this._baseLayer
 			.selectAll("path")
 			.data(
 				this._formatData(this.data, (e, outerIndex, innerIndex) => {
@@ -201,7 +201,7 @@ class PolyLineLayer extends Layer {
 								d.properties.index,
 								index
 							);
-							this.selectLayer.select("*").remove();
+							this._selectLayer.select("*").remove();
 							this._drawSelectLayer();
 						}
 						if (clickFn) {
@@ -264,7 +264,7 @@ class PolyLineLayer extends Layer {
 				}
 			})
 			.on("mouseleave", () => {
-				this.hoverLayer.select("path").remove();
+				this._hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {
 				const index = d.geometry.coordinates.findIndex(i =>
@@ -302,7 +302,7 @@ class PolyLineLayer extends Layer {
 	}
 
 	private _drawSelectLayer() {
-		this.selectLayer.selectAll("*").remove();
+		this._selectLayer.selectAll("*").remove();
 		const pathData = this._formatData(this.data, (e, idx, index) => {
 			if (!this._selectIndex.get(idx)) {
 				return false;
@@ -310,8 +310,7 @@ class PolyLineLayer extends Layer {
 				return this._selectIndex.get(idx)!.has(index);
 			}
 		});
-		console.log(this._selectIndex, pathData);
-		this.selectLayer
+		this._selectLayer
 			.selectAll("path")
 			.data(pathData)
 			.enter()
@@ -332,7 +331,7 @@ class PolyLineLayer extends Layer {
 	}
 
 	private _drawHoverLayer() {
-		this.hoverLayer.selectAll("*").remove();
+		this._hoverLayer.selectAll("*").remove();
 		const pathData = this._formatData(this.data, (e, idx, index) => {
 			if (!this._hoverIndex.get(idx)) {
 				return false;
@@ -341,7 +340,7 @@ class PolyLineLayer extends Layer {
 			}
 		});
 
-		this.hoverLayer
+		this._hoverLayer
 			.selectAll("path")
 			.data(pathData)
 			.enter()
@@ -512,11 +511,11 @@ class PolyLineLayer extends Layer {
 			.attr("id", `polyline-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
-		this.baseLayer = this.container.append("g");
-		this.selectLayer = this.container
+		this._baseLayer = this.container.append("g");
+		this._selectLayer = this.container
 			.append("g")
 			.style("pointer-events", "none");
-		this.hoverLayer = this.container
+		this._hoverLayer = this.container
 			.append("g")
 			.style("pointer-events", "none");
 
@@ -552,9 +551,9 @@ class PolyLineLayer extends Layer {
 	updateData(data: PolyLineDataSourceProps[]) {
 		this.data = data;
 		this._selectIndex = new Map();
-		this.baseLayer.selectAll("path").remove();
-		this.selectLayer.selectAll("path").remove();
-		this.hoverLayer.selectAll("path").remove();
+		this._baseLayer.selectAll("path").remove();
+		this._selectLayer.selectAll("path").remove();
+		this._hoverLayer.selectAll("path").remove();
 		this._draw();
 	}
 
