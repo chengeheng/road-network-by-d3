@@ -1,24 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps, LayerType } from ".";
 
-interface LabelItemOptionProps extends LayerOptionProps {
-	rotate?: number;
-	offset?: [number, number];
-	stopPropagation?: boolean;
-	onClick?: Function;
-	onRightClick?: Function;
-	onDbClick?: Function;
-}
-
-interface LabelOptionProps extends LabelItemOptionProps {
-	rotate: number;
-	offset: [number, number];
-	stopPropagation: boolean;
-	onClick: Function;
-	onRightClick: Function;
-	onDbClick: Function;
-}
-
 interface StyleProps {
 	color?: string;
 	fontWeight?: string;
@@ -27,60 +9,115 @@ interface StyleProps {
 	strokeWidth?: number;
 }
 
+interface LabelLayerOptionProps extends LayerOptionProps {
+	style?: StyleProps;
+
+	rotate?: number;
+	offset?: [number, number];
+	stopPropagation?: boolean;
+	onClick?: Function;
+	onRightClick?: Function;
+	onDbClick?: Function;
+}
+
+interface _LabelLayerOptionProps extends LabelLayerOptionProps {
+	style: {
+		color: string;
+		fontWeight: string;
+		fontSize: number;
+		strokeColor: string;
+		strokeWidth: number;
+	};
+
+	rotate: number;
+	offset: [number, number];
+	stopPropagation: boolean;
+	onClick: Function;
+	onRightClick: Function;
+	onDbClick: Function;
+}
+
 interface LabelDataSourceProps {
 	name: string;
 	coordinate: [number, number];
 	id: string | number;
-	option?: LabelItemOptionProps;
-	style?: StyleProps;
-	hoverStyle?: StyleProps;
-	selectStyle?: StyleProps;
+	option?: LabelLayerOptionProps;
 }
 
-const defaultOption: LabelOptionProps = {
+const defaultOption = {
+	style: {
+		fontSize: 12,
+		fontWeight: "normal",
+		color: "#333333",
+		strokeColor: "transparent",
+		strokeWidth: 2,
+	},
 	rotate: 0,
-	offset: [0, 0],
+	offset: [0, 0] as [number, number],
 	stopPropagation: false,
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
 };
 
-const defaultTextStyle = {
-	fontSize: 12,
-	fontWeight: "normal",
-	color: "#333333",
-	strokeColor: "transparent",
-	strokeWidth: 2,
-};
-
 class LabelLayer extends Layer {
 	private _clickCount: number;
 	private _clickTimer: NodeJS.Timeout | undefined;
-	private _filterIds: string[];
 	private _baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _option: _LabelLayerOptionProps;
 
 	data: LabelDataSourceProps[];
-	option: LabelOptionProps;
 	isHided: boolean;
 
 	constructor(
 		dataSource: LabelDataSourceProps[],
-		option: LabelItemOptionProps = defaultOption
+		option?: LabelLayerOptionProps
 	) {
 		super(LayerType.PointLayer, option);
 		this.data = dataSource;
-		this.option = { ...defaultOption, ...option };
+		this._option = this._combineOption(option);
 
 		this._clickCount = 0;
 		this.isHided = false;
-		this._filterIds = [];
 	}
 
-	private initState() {
+	private _combineOption(
+		option: LabelLayerOptionProps = {}
+	): _LabelLayerOptionProps {
+		const { style = {}, ...rest } = option;
+		return {
+			...defaultOption,
+			...rest,
+			style: {
+				...defaultOption.style,
+				...style,
+			},
+		};
+	}
+
+	private _initState() {
 		this._clickCount = 0;
-		this._filterIds = [];
 		this.isHided = false;
+	}
+
+	private _formatData(data: LabelDataSourceProps[]) {
+		return data.map(i => {
+			const { style = {} } = i.option || {};
+			const option = {
+				...this._option,
+				...i.option,
+				style: {
+					...this._option.style,
+					...style,
+				},
+			};
+			const coordinate = this.projection(i.coordinate)!;
+			return {
+				...i,
+				coordinate: coordinate,
+				option: option,
+			};
+		});
 	}
 
 	init(g: SVGGElement, projection: d3.GeoProjection) {
@@ -126,7 +163,7 @@ class LabelLayer extends Layer {
 		this.data = data;
 		// 初始化数据
 		this._baseLayer.selectAll("*").remove();
-		this.initState();
+		this._initState();
 		this.container.style("display", "inline");
 		// 绘制
 		this._draw();
@@ -135,7 +172,7 @@ class LabelLayer extends Layer {
 	protected _draw() {
 		const g = this._baseLayer
 			.selectAll("g")
-			.data(this.formatData(this.data))
+			.data(this._formatData(this.data))
 			.enter()
 			.append("g");
 
@@ -155,17 +192,11 @@ class LabelLayer extends Layer {
 				d =>
 					`rotate(${d.option.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
 			)
-			.attr("fill", d => d.style?.color || defaultTextStyle.color)
-			.attr("font-size", d => d.style?.fontSize || defaultTextStyle.fontSize)
-			.attr(
-				"font-weight",
-				d => d.style?.fontWeight || defaultTextStyle.fontWeight
-			)
-			.attr("stroke", d => d.style?.strokeColor || defaultTextStyle.strokeColor)
-			.attr(
-				"stroke-width",
-				d => d.style?.strokeWidth || defaultTextStyle.strokeWidth
-			)
+			.attr("fill", d => d.option.style.color)
+			.attr("font-size", d => d.option.style.fontSize)
+			.attr("font-weight", d => d.option.style.fontWeight)
+			.attr("stroke", d => d.option.style.strokeColor)
+			.attr("stroke-width", d => d.option.style.strokeWidth)
 			.attr("paint-order", "stroke")
 			.style("text-anchor", "middle")
 			.attr("dominant-baseline", "central")
@@ -224,18 +255,6 @@ class LabelLayer extends Layer {
 					});
 				}
 			});
-	}
-
-	private formatData(data: LabelDataSourceProps[]) {
-		return data.map(i => {
-			const option = { ...this.option, ...i.option };
-			const coordinate = this.projection(i.coordinate)!;
-			return {
-				...i,
-				coordinate: coordinate,
-				option: option,
-			};
-		});
 	}
 }
 

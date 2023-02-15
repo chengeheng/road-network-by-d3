@@ -9,55 +9,80 @@ declare enum StrokeLineType {
     dotted = "dotted",
     solid = "solid"
 }
-interface PolyLineLayerOption extends LayerOptionProps {
+interface StyleProps {
     strokeColor?: string;
     strokeWidth?: number;
     strokeOpacity?: number;
     strokeType?: StrokeLineType;
     strokeDashArray?: number[];
-    selectColor?: string;
-    selectable?: boolean;
-    hoverColor?: string;
+}
+interface PolyLineLayerOptionProps extends LayerOptionProps {
+    style?: StyleProps;
+    selectStyle?: StyleProps;
+    hoverStyle?: StyleProps;
+    selectable: boolean;
     stopPropagation?: boolean;
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
     selectType?: "link" | "path" | "all";
 }
-interface PolyLineOption extends PolyLineLayerOption {
-    strokeColor: string;
-    strokeWidth: number;
-    strokeOpacity: number;
-    strokeType: StrokeLineType;
-    strokeDashArray: number[];
-    selectColor: string;
+interface PolyLineDataSourceProps {
+    data: polyLineItem[];
+    option?: PolyLineLayerOptionProps;
+}
+interface _PolyLineOptionProps {
+    style: {
+        strokeColor: string;
+        strokeWidth: number;
+        strokeOpacity: number;
+        strokeType: StrokeLineType;
+        strokeDashArray: number[];
+    };
+    selectStyle: {
+        strokeColor: string;
+        strokeWidth: number;
+        strokeOpacity: number;
+        strokeType: StrokeLineType;
+        strokeDashArray: number[];
+    };
+    hoverStyle: {
+        strokeColor: string;
+        strokeWidth: number;
+        strokeOpacity: number;
+        strokeType: StrokeLineType;
+        strokeDashArray: number[];
+    };
+    hasHover: boolean;
     selectable: boolean;
-    hoverColor: string;
     stopPropagation: boolean;
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
     selectType: "link" | "path" | "all";
 }
-interface PolyLineDataSource {
-    data: polyLineItem[];
-    option?: PolyLineLayerOption;
-}
 declare class PolyLineLayer extends Layer {
-    data: PolyLineDataSource[];
-    option: PolyLineOption;
+    data: PolyLineDataSourceProps[];
+    option: _PolyLineOptionProps;
     path: d3.GeoPath<any, any>;
     length: number;
-    baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
-    selectLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
-    hoverLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
-    private clickCount;
-    private clickTimer;
-    private selectIndex;
+    private _baseLayer;
+    private _selectLayer;
+    private _hoverLayer;
+    private _clickCount;
+    private _clickTimer;
+    private _selectIndex;
     private _hoverIndex;
     private _selectType;
     private _allIndex;
-    constructor(dataSource: PolyLineDataSource[], option?: PolyLineLayerOption);
+    constructor(dataSource: PolyLineDataSourceProps[], option?: PolyLineLayerOptionProps);
+    private _combineOption;
+    protected _draw(): void;
+    private _drawSelectLayer;
+    private _drawHoverLayer;
+    private _formatData;
+    private combineIndex;
+    private isPointInLine;
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     /**
@@ -70,14 +95,8 @@ declare class PolyLineLayer extends Layer {
     hide(): void;
     enableLayerFunc(): void;
     disableLayerFunc(): void;
-    updateData(data: PolyLineDataSource[]): void;
+    updateData(data: PolyLineDataSourceProps[]): void;
     setSelectType(type: "link" | "path" | "all"): void;
-    protected draw(): void;
-    drawSelectLayer(): void;
-    private drawHoverLayer;
-    private formatData;
-    private combineIndex;
-    private isPointInLine;
 }
-export type { PolyLineDataSource };
+export type { PolyLineDataSourceProps };
 export { PolyLineLayer as default, StrokeLineType };

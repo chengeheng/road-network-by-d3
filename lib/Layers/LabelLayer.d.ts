@@ -1,21 +1,5 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps } from ".";
-interface LabelItemOptionProps extends LayerOptionProps {
-    rotate?: number;
-    offset?: [number, number];
-    stopPropagation?: boolean;
-    onClick?: Function;
-    onRightClick?: Function;
-    onDbClick?: Function;
-}
-interface LabelOptionProps extends LabelItemOptionProps {
-    rotate: number;
-    offset: [number, number];
-    stopPropagation: boolean;
-    onClick: Function;
-    onRightClick: Function;
-    onDbClick: Function;
-}
 interface StyleProps {
     color?: string;
     fontWeight?: string;
@@ -23,25 +7,32 @@ interface StyleProps {
     strokeColor?: string;
     strokeWidth?: number;
 }
+interface LabelLayerOptionProps extends LayerOptionProps {
+    style?: StyleProps;
+    rotate?: number;
+    offset?: [number, number];
+    stopPropagation?: boolean;
+    onClick?: Function;
+    onRightClick?: Function;
+    onDbClick?: Function;
+}
 interface LabelDataSourceProps {
     name: string;
     coordinate: [number, number];
     id: string | number;
-    option?: LabelItemOptionProps;
-    style?: StyleProps;
-    hoverStyle?: StyleProps;
-    selectStyle?: StyleProps;
+    option?: LabelLayerOptionProps;
 }
 declare class LabelLayer extends Layer {
     private _clickCount;
     private _clickTimer;
-    private _filterIds;
     private _baseLayer;
+    private _option;
     data: LabelDataSourceProps[];
-    option: LabelOptionProps;
     isHided: boolean;
-    constructor(dataSource: LabelDataSourceProps[], option?: LabelItemOptionProps);
-    private initState;
+    constructor(dataSource: LabelDataSourceProps[], option?: LabelLayerOptionProps);
+    private _combineOption;
+    private _initState;
+    private _formatData;
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     /**
@@ -56,7 +47,6 @@ declare class LabelLayer extends Layer {
     disableLayerFunc(): void;
     updateData(data: LabelDataSourceProps[]): void;
     protected _draw(): void;
-    private formatData;
 }
 export type { LabelDataSourceProps };
 export default LabelLayer;

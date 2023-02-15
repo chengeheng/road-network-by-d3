@@ -46,8 +46,13 @@ const oldLabelData: LabelDataSourceProps[] = [
 	{
 		id: 1,
 		name: "博园路",
-		coordinate: [118.391698, 31.343069],
+		coordinate: [118.39053, 31.343104],
 		option: {
+			style: {
+				color: "#1176f0",
+				strokeColor: "#ffffff",
+				strokeWidth: 3,
+			},
 			rotate: 40,
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -56,17 +61,6 @@ const oldLabelData: LabelDataSourceProps[] = [
 			onDbClick: (e: any) => console.log("label double click", e),
 			onRightClick: (e: any) => console.log("label right click", e),
 		},
-		style: {
-			color: "#1176f0",
-			strokeColor: "#ffffff",
-			strokeWidth: 3,
-		},
-		hoverStyle: {
-			color: "blue",
-		},
-		selectStyle: {
-			color: "black",
-		},
 	},
 ];
 
@@ -74,10 +68,11 @@ const oldPointsData: PointDataSourceProps[] = [
 	{
 		id: 1,
 		name: "金宝大酒店",
-		coordinate: [118.39053, 31.343104],
+		coordinate: [121.313697, 31.510286],
 		option: {
 			offset: [0, 18],
 			rotate: 0,
+			hoverColor: "#333333",
 			stopPropagation: true,
 			onClick: (e: any) => {
 				console.log("pointEvent", e);
@@ -89,7 +84,7 @@ const oldPointsData: PointDataSourceProps[] = [
 	{
 		id: 2,
 		name: "世界茶饮",
-		coordinate: [118.39053, 31.343104],
+		coordinate: [121.315422, 31.221684],
 		option: {
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -107,24 +102,31 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 				id: 1,
 				coordinates: [
 					[118.39057, 31.342792],
-					[118.390031, 31.342121],
+					[118.390031, 31.342792],
 				],
 			},
-			{
-				id: 2,
-				coordinates: [
-					[118.390755, 31.342375],
-					[118.390579, 31.341959],
-					[118.390579, 31.341635],
-					[118.390755, 31.341373],
-				],
-			},
+			// {
+			// 	id: 2,
+			// 	coordinates: [
+			// 		[118.390755, 31.342375],
+			// 		[118.390579, 31.341959],
+			// 		[118.390579, 31.341635],
+			// 		[118.390755, 31.341373],
+			// 	],
+			// },
+			// {
+			// 	id: 3,
+			// 	coordinates: [
+			// 		[121.313697, 31.510286],
+			// 		[121.315422, 31.221684],
+			// 	],
+			// },
 		],
 		option: {
 			style: {
 				strokeColor: "#1176f0",
-				strokeWidth: 1,
-				strokeType: StrokeLineType.dotted,
+				strokeWidth: 10,
+				// strokeType: StrokeLineType.dotted,
 			},
 			hoverStyle: {
 				strokeColor: "#333333",
@@ -146,11 +148,13 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 			{
 				id: 1,
 				coordinates: [
-					[118.390562, 31.342822],
-					[118.391828, 31.34268],
-					[118.391842, 31.341353],
-					[118.390764, 31.341311],
-					[118.390562, 31.342822],
+					[121.295875, 31.499448],
+					[121.43213, 31.408761],
+					[121.43213, 31.408761],
+					[121.356816, 31.214767],
+					[121.201589, 31.303175],
+					[121.201589, 31.303175],
+					[121.295875, 31.499448],
 				],
 				reverseCoords: [
 					[118.39102, 31.342313],
@@ -182,6 +186,7 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 			style: {
 				strokeColor: "#1176f0",
 				strokeWidth: 0.5,
+				fillColor: "yellow",
 			},
 			hoverStyle: {
 				fillColor: "#333333",
@@ -255,6 +260,9 @@ const newLabelData: LabelDataSourceProps[] = [
 		name: "中国电信",
 		coordinate: [118.39248, 31.341504],
 		option: {
+			style: {
+				color: "#333",
+			},
 			rotate: 40,
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -262,15 +270,6 @@ const newLabelData: LabelDataSourceProps[] = [
 			},
 			onDbClick: (e: any) => console.log("label double click", e),
 			onRightClick: (e: any) => console.log("label right click", e),
-		},
-		style: {
-			color: "#333",
-		},
-		hoverStyle: {
-			color: "blue",
-		},
-		selectStyle: {
-			color: "black",
 		},
 	},
 ];
@@ -328,8 +327,10 @@ function App() {
 	const [map, setMap] = useState<Map>();
 	useEffect(() => {
 		const map = new Map("container", {
-			center: [118.39053, 31.343104],
-			onClick: e => console.log("click map", e),
+			center: [118.39057, 31.342792],
+			// center: [121.314890086009, 31.31121052734847],
+
+			onClick: (...e) => console.log("click map", e),
 		});
 		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#28B9F0" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
@@ -379,7 +380,14 @@ function App() {
 			label: "聚焦点",
 			onClick: () => {
 				if (!map) return;
-				map.moveTo([118.391581, 31.34204]);
+				map.moveTo([121.313697, 31.510286]);
+			},
+		},
+		{
+			label: "聚焦点2",
+			onClick: () => {
+				if (!map) return;
+				map.moveTo([121.315422, 31.221684]);
 			},
 		},
 		{
@@ -499,6 +507,20 @@ function App() {
 			onClick: () => {
 				if (!polyLineLayer) return;
 				polyLineLayer.setSelectType("path");
+			},
+		},
+		{
+			label: "更改地图层级到最大",
+			onclick: () => {
+				if (!map) return;
+				map.setLevel(20);
+			},
+		},
+		{
+			label: "更改地图层级到最小",
+			onclick: () => {
+				if (!map) return;
+				map.setLevel(1);
 			},
 		},
 	];

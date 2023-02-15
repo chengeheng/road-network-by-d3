@@ -4,6 +4,7 @@ interface NameStyleProps {
     color?: string;
     fontWeight?: string | number;
     fontSize?: number;
+    rotate?: number;
 }
 type polygonItem = {
     id: string | number;
@@ -17,7 +18,7 @@ declare enum StrokeLineType {
     dotted = "dotted",
     solid = "solid"
 }
-interface PolygonLayerOption extends LayerOptionProps {
+interface StyleProps {
     strokeColor?: string;
     strokeWidth?: number;
     strokeOpacity?: number;
@@ -25,82 +26,80 @@ interface PolygonLayerOption extends LayerOptionProps {
     strokeDashArray?: number[];
     fillColor?: string;
     fillOpacity?: number;
-    selectColor?: string;
-    selectable?: boolean;
-    hoverColor?: string;
+}
+interface PolygonLayerOptionProps extends LayerOptionProps {
+    style?: StyleProps;
+    selectStyle?: StyleProps;
+    hoverStyle?: StyleProps;
+    selectable: boolean;
     stopPropagation?: boolean;
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
     selectType?: "link" | "path" | "all";
 }
-interface PolygonOption extends PolygonLayerOption {
-    strokeColor: string;
-    strokeWidth: number;
-    strokeOpacity: number;
-    strokeType: StrokeLineType;
-    strokeDashArray: number[];
-    fillColor: string;
-    fillOpacity: number;
-    selectColor: string;
+interface _PolygonOptionProps {
+    style: {
+        strokeColor: string;
+        strokeWidth: number;
+        strokeOpacity: number;
+        strokeType: StrokeLineType;
+        strokeDashArray: number[];
+        fillColor: string;
+        fillOpacity: number;
+    };
+    selectStyle: {
+        strokeColor: string;
+        strokeWidth: number;
+        strokeOpacity: number;
+        strokeType: StrokeLineType;
+        strokeDashArray: number[];
+        fillColor: string;
+        fillOpacity: number;
+    };
+    hoverStyle: {
+        strokeColor: string;
+        strokeWidth: number;
+        strokeOpacity: number;
+        strokeType: StrokeLineType;
+        strokeDashArray: number[];
+        fillColor: string;
+        fillOpacity: number;
+    };
+    hasHover: boolean;
     selectable: boolean;
-    hoverColor: string;
     stopPropagation: boolean;
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
     selectType: "link" | "path" | "all";
 }
-interface PolygonDataSource {
+interface PolygonDataSourceProps {
     data: polygonItem[];
-    option?: PolygonLayerOption;
-}
-interface NameStyleProps {
-    color?: string;
-    fontWeight?: string | number;
-    fontSize?: number;
-    rotate?: number;
-}
-interface DefaultNameDataProps extends NameStyleProps {
-    color: string;
-    fontWeight: string | number;
-    fontSize: number;
-    rotate: number;
-}
-interface NameDataProps extends DefaultNameDataProps {
-    name: string;
-    coordinate: [number, number];
-}
-interface FormatDataProps {
-    type: string;
-    geometry: {
-        type: string;
-        coordinates: [number, number][][];
-    };
-    properties: {
-        option: PolygonOption;
-        ids: (string | number)[];
-        originData: PolygonDataSource;
-        index: number;
-        [propName: string]: any;
-    };
+    option?: PolygonLayerOptionProps;
 }
 declare class PolygonLayer extends Layer {
-    data: PolygonDataSource[];
-    option: PolygonOption;
+    data: PolygonDataSourceProps[];
+    option: _PolygonOptionProps;
     path: d3.GeoPath<any, any>;
     isHided: boolean;
     length: number;
-    baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
-    selectLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
-    hoverLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
+    private _baseLayer;
+    private _selectLayer;
+    private _hoverLayer;
     private clickCount;
     private clickTimer;
     private selectIndex;
     private _hoverIndex;
     private _selectType;
     private _allIndex;
-    constructor(dataSource: PolygonDataSource[], option?: PolygonLayerOption);
+    constructor(dataSource: PolygonDataSourceProps[], option?: PolygonLayerOptionProps);
+    private _combineOption;
+    private _combineIndex;
+    private _drawSelectLayer;
+    private _drawHoverLayer;
+    private _formatData;
+    protected _draw(): void;
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     /**
@@ -113,13 +112,8 @@ declare class PolygonLayer extends Layer {
     hide(): void;
     enableLayerFunc(): void;
     disableLayerFunc(): void;
-    updateData(data: PolygonDataSource[]): void;
+    updateData(data: PolygonDataSourceProps[]): void;
     setSelectType(type: "link" | "path" | "all"): void;
-    protected draw(): void;
-    private combineIndex;
-    private drawSelectLayer;
-    private drawHoverLayer;
-    protected formatData(data: PolygonDataSource[], dataFilter?: (e: polygonItem, idx: number, index: number) => boolean): [FormatDataProps[], NameDataProps[]];
 }
-export type { PolygonDataSource };
+export type { PolygonDataSourceProps };
 export { PolygonLayer as default, StrokeLineType };

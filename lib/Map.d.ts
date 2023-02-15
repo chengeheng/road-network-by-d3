@@ -17,6 +17,7 @@ declare class Map {
     private zoom;
     private zoomLevel;
     private layers;
+    private _level;
     projection: d3.GeoProjection;
     constructor(id: string, options?: MapOption);
     private init;
@@ -52,5 +53,6 @@ declare class Map {
      * @returns
      */
     focusOnView(coords: [number, number][]): void;
+    setLevel(level: number): void;
 }
 export default Map;

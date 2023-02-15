@@ -1,4 +1,6 @@
 import * as d3 from "d3";
+
+import { zooms } from "./constants/config";
 import Layer from "./Layers";
 
 interface MapOption {
@@ -26,6 +28,8 @@ class Map {
 
 	private layers: Layer[];
 
+	private _level: number;
+
 	projection: d3.GeoProjection;
 
 	constructor(id: string, options: MapOption = defaultOptions) {
@@ -34,7 +38,9 @@ class Map {
 		this.width = 0;
 		this.height = 0;
 		this.layers = [];
+		this._level = 5;
 		this.zoomLevel = 1;
+		// this.zoomLevel = 1;
 
 		this.projection = d3.geoMercator();
 
@@ -49,9 +55,10 @@ class Map {
 			const rect = container.getBoundingClientRect();
 			this.width = rect.width;
 			this.height = rect.height;
+
 			this.projection = d3
 				.geoMercator()
-				.scale(30000000)
+				.scale(725840875.619001)
 				.center(option.center!)
 				.translate([rect.width / 2, rect.height / 2]);
 
@@ -87,24 +94,26 @@ class Map {
 		// 添加缩放事件
 		const zoom = d3
 			.zoom<SVGSVGElement, unknown>()
-			.scaleExtent([1 / 10, 5])
-			// .wheelDelta(event => {
-			// 	if (event.deltaY < 0) {
-			// 		if (this.zoomLevel === 5) return Math.log2(1);
-			// 		this.zoomLevel = this.zoomLevel + 0.5;
-			// 		return Math.log2(1 + 0.5 / (this.zoomLevel - 0.5));
-			// 	} else {
-			// 		if (this.zoomLevel === 0.5) return Math.log2(1);
-			// 		this.zoomLevel = this.zoomLevel - 0.5;
-			// 		return Math.log2(1 - 0.5 / (this.zoomLevel + 0.5));
-			// 	}
-			// })
+			// min 0.02 max 5.02 step 0.25
+			.scaleExtent([1 / 4000, 1])
+			.wheelDelta(event => {
+				if (event.deltaY < 0) {
+					if (this.zoomLevel === 0) return Math.log2(1);
+					this.zoomLevel--;
+					return Math.log2(zooms[this.zoomLevel] / zooms[this.zoomLevel + 1]);
+				} else {
+					if (this.zoomLevel === 19) return Math.log2(1);
+					this.zoomLevel++;
+					return Math.log2(zooms[this.zoomLevel] / zooms[this.zoomLevel - 1]);
+				}
+			})
 			.on("zoom", e => {
 				g.attr("transform", e.transform);
 			});
 		this.zoom = zoom;
-		zoom.scaleBy(svg, this.zoomLevel);
+		zoom.scaleBy(svg, zooms[this.zoomLevel]);
 		svg.transition().duration(1000);
+		zoom.duration(1000);
 		svg
 			.call(zoom)
 			.on("click", e => {
@@ -165,6 +174,7 @@ class Map {
 	 * @param zoomLevel 地图缩放层级
 	 */
 	moveTo(coord: [number, number], zoomLevel: number = 5) {
+		// TODO zoomlevel含义变化，后续需处理只能传入整数
 		const svg = d3.select(this.svg);
 		const realCoord = this.projection(coord)!;
 		const t = d3.zoomIdentity.scale(zoomLevel).apply(realCoord);
@@ -211,6 +221,18 @@ class Map {
 		} else {
 			this.moveTo(middle, scale);
 		}
+	}
+
+	setLevel(level: number) {
+		if (level >= 20) {
+			this._level = 20;
+		} else if (level <= 1) {
+			this._level = 1;
+		} else {
+			this._level = Math.floor(level);
+		}
+		this.zoomLevel = this._level * 0.25 + 0.02;
+		this.zoom.scaleBy(d3.select(this.svg), this.zoomLevel);
 	}
 }
 

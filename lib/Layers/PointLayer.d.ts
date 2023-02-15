@@ -23,7 +23,7 @@ interface PointOption extends PointLayerOption {
     onRightClick: Function;
     onDbClick: Function;
 }
-interface PointDataSource {
+interface PointDataSourceProps {
     id: string | number;
     coordinate: [number, number];
     name?: string;
@@ -31,15 +31,21 @@ interface PointDataSource {
     option?: PointLayerOption;
 }
 declare class PointLayer extends Layer {
-    data: PointDataSource[];
+    data: PointDataSourceProps[];
     option: PointOption;
     isHided: boolean;
     baseLayer: d3.Selection<SVGGElement, unknown, null, undefined>;
     private clickCount;
     private clickTimer;
     private filterIds;
-    constructor(dataSource: PointDataSource[], option?: PointLayerOption);
-    private initState;
+    constructor(dataSource: PointDataSourceProps[], option?: PointLayerOption);
+    private _initState;
+    private _drawWithHoverColor;
+    private drawWithOutHoverColor;
+    private _formatData;
+    private _makeFilterMatrix;
+    private _hexToRgb;
+    protected _draw(): void;
     init(g: SVGGElement, projection: d3.GeoProjection): void;
     remove(): void;
     /**
@@ -52,13 +58,7 @@ declare class PointLayer extends Layer {
     hide(): void;
     enableLayerFunc(): void;
     disableLayerFunc(): void;
-    updateData(data: PointDataSource[]): void;
-    protected draw(): void;
-    private drawWithHoverColor;
-    private drawWithOutHoverColor;
-    private formatData;
-    private makeFilterMatrix;
-    private hexToRgb;
+    updateData(data: PointDataSourceProps[]): void;
 }
-export type { PointDataSource };
+export type { PointDataSourceProps };
 export default PointLayer;
