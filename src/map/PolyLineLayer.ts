@@ -278,7 +278,7 @@ class PolyLineLayer extends Layer {
 				}
 			})
 			.on("mouseleave", () => {
-				this.hoverLayer.select("path").remove();
+				this.hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {
 				const index = d.geometry.coordinates.findIndex(i =>
