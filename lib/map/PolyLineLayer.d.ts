@@ -77,7 +77,9 @@ declare class PolyLineLayer extends Layer {
     private drawHoverLayer;
     private formatData;
     private combineIndex;
-    private isPointInLine;
+    private _insideInStandardRect;
+    private _insideInRect;
+    private _isPointInLine;
 }
 export type { PolyLineDataSource };
 export { PolyLineLayer as default, StrokeLineType };

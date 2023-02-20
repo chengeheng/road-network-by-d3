@@ -189,7 +189,7 @@ class PolyLineLayer extends Layer {
 				this.clickCount++;
 				const originData = d.properties.originData;
 				const index = d.geometry.coordinates.findIndex(i =>
-					this.isPointInLine(
+					this._isPointInLine(
 						i,
 						d3.pointer(e, this.container.node())!,
 						this.projection,
@@ -258,7 +258,7 @@ class PolyLineLayer extends Layer {
 				const hasHover = d.properties.option.hoverColor;
 				if (hasHover) {
 					const index = coordinates.findIndex(i =>
-						this.isPointInLine(
+						this._isPointInLine(
 							i,
 							d3.pointer(e, this.container.node())!,
 							this.projection,
@@ -282,7 +282,7 @@ class PolyLineLayer extends Layer {
 			})
 			.on("contextmenu", (e, d) => {
 				const index = d.geometry.coordinates.findIndex(i =>
-					this.isPointInLine(
+					this._isPointInLine(
 						i,
 						d3.pointer(e, this.container.node())!,
 						this.projection,
@@ -479,19 +479,83 @@ class PolyLineLayer extends Layer {
 		}
 	}
 
-	private isPointInLine(
+	// private _PointToLine(
+	// 	point: [number, number],
+	// 	lines: [[number, number], [number, number]]
+	// ): number {
+	// 	const [x, y] = point;
+	// 	const [x1, y1] = lines[0];
+	// 	const [x2, y2] = lines[1];
+	// 	const length = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+	// 	const areas = Math.abs((x1 - x) * (y2 - y) - (y1 - y) * (x2 - x));
+	// 	return areas / length;
+	// }
+
+	private _insideInStandardRect(
+		[x1, y1]: [number, number],
+		[x2, y2]: [number, number],
+		[x, y]: [number, number]
+	): boolean {
+		if (y < y1 || y > y2) return false;
+		if (x1 < x2) {
+			if (x < x1 || x > x2) return false;
+		} else {
+			if (x > x1 || x < x2) return false;
+		}
+		return true;
+	}
+
+	private _insideInRect(
+		[x1, y1]: [number, number],
+		[x2, y2]: [number, number],
+		[x, y]: [number, number],
+		height: number
+	): boolean {
+		if (y1 === y2) {
+			return this._insideInStandardRect(
+				[x1, y1 - height],
+				[x2, y1 + height],
+				[x, y]
+			);
+		}
+
+		const l = y2 - y1;
+		const r = x2 - x1;
+		const s = Math.sqrt(l * l + r * r);
+		const sin = l / s;
+		const cos = r / s;
+
+		const x1r = x1 * cos + y1 * sin;
+		const y1r = y1 * cos - x1 * sin;
+		const x2r = x2 * cos + y2 * sin;
+		const y2r = y2 * cos - x2 * sin;
+		const xr = x * cos + y * sin;
+		const yr = y * cos - x * sin;
+
+		return this._insideInStandardRect(
+			[x1r, y1r - height],
+			[x2r, y2r + height],
+			[xr, yr]
+		);
+	}
+
+	private _isPointInLine(
 		coordinates: [number, number][],
 		point: [number, number],
 		projection: d3.GeoProjection,
 		lineWidth: number
-	) {
-		const halfWidth = lineWidth / 2;
-		const lineAreas = coordinates.map(projection).reduce((pre, cur) => {
-			pre.unshift([cur![0] + halfWidth, cur![1] + halfWidth]);
-			pre.push([cur![0] - halfWidth, cur![1] - halfWidth]);
-			return pre;
-		}, [] as [number, number][]);
-		return d3.polygonContains(lineAreas, point);
+	): boolean {
+		if (coordinates.length <= 1) return false;
+		const lineArr = coordinates.map(projection) as [number, number][];
+		for (let i = 1; i < lineArr.length; i++) {
+			if (
+				this._insideInRect(lineArr[i], lineArr[i - 1], point, lineWidth / 2)
+			) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
 
