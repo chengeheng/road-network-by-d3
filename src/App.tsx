@@ -71,7 +71,7 @@ const oldPointsData: PointDataSource[] = [
 		coordinate: [118.39053, 31.343104],
 		option: {
 			icon: TreePng,
-			rotate: 30,
+			rotate: 0,
 			stopPropagation: true,
 			onClick: (e: any) => {
 				console.log("pointEvent", e);
@@ -302,7 +302,7 @@ function App() {
 			center: [118.39053, 31.343104],
 			onClick: e => console.log("click map", e),
 		});
-		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#28B9F0" });
+		const pointlayer = new PointLayer(oldPointsData);
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData);
 		const labellayer = new LabelLayer(oldLabelData);
