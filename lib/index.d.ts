@@ -1,5 +1,5 @@
-import Map from "./map/Map";
-import PointLayer from "./map/PointLayer";
-import PolygonLayer from "./map/PolygonLayer";
-import PolyLineLayer from "./map/PolyLineLayer";
-export { Map as default, PointLayer, PolygonLayer, PolyLineLayer };
+import { LabelLayer, PointLayer, PolygonLayer, PolyLineLayer, StrokeLineType } from "./Layers";
+import { LabelDataSourceProps, PointDataSourceProps, PolygonDataSourceProps, PolyLineDataSourceProps } from "./Layers";
+import Map from "./Map";
+export type { PointDataSourceProps, PolygonDataSourceProps, PolyLineDataSourceProps, LabelDataSourceProps, };
+export { Map as default, PointLayer, PolygonLayer, PolyLineLayer, LabelLayer, StrokeLineType, };

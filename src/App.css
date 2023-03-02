@@ -1,3 +1,14 @@
 .App {
 	height: 100%;
+	overflow: hidden;
+	background-color: #e3e3e3;
 }
+
+.button {
+	width: auto;
+	margin: 5px 5px 5px 0;
+}
+
+/* .button:not(:first-child) {
+	margin-left: 5px;
+} */

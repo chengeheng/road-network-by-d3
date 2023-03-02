@@ -3,6 +3,6 @@ module.exports = {
 	useTabs: true,
 	// 一个tab代表空格数
 	tabWidth: 2,
-	printWidth: 100,
+	// printWidth: 80,
 	arrowParens: "avoid",
 };
