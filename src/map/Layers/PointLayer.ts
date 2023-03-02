@@ -97,6 +97,7 @@ class PointLayer extends Layer {
 			.attr("type", "matrix")
 			.attr("values", filterMatrix);
 		this.filterIds.push(id);
+
 		g.append("image")
 			.attr("xlink:href", d => d.icon)
 			.attr("x", d => d.imageLeftTop[0])
@@ -206,7 +207,7 @@ class PointLayer extends Layer {
 			.attr(
 				"transform",
 				d =>
-					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]}) translate(${d.option.offset[0]},${d.option.offset[1]})`
+					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]})`
 			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {

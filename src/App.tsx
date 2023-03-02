@@ -332,7 +332,7 @@ function App() {
 
 			onClick: (...e) => console.log("click map", e),
 		});
-		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#28B9F0" });
+		const pointlayer = new PointLayer(oldPointsData);
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData);
 		const labellayer = new LabelLayer(oldLabelData);
