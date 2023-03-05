@@ -125,7 +125,7 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 		option: {
 			style: {
 				strokeColor: "#1176f0",
-				strokeWidth: 10,
+				strokeWidth: 1,
 				// strokeType: StrokeLineType.dotted,
 			},
 			hoverStyle: {

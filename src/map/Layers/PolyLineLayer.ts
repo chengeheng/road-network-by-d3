@@ -142,16 +142,6 @@ class PolyLineLayer extends Layer {
 	}
 
 	protected _draw() {
-		console.log(
-			this._formatData(this.data, (e, outerIndex, innerIndex) => {
-				if (this._allIndex.has(outerIndex)) {
-					this._allIndex.get(outerIndex)?.add(innerIndex);
-				} else {
-					this._allIndex.set(outerIndex, new Set<number>([innerIndex]));
-				}
-				return true;
-			})
-		);
 		this._baseLayer
 			.selectAll("path")
 			.data(

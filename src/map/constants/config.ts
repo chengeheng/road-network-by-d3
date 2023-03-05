@@ -25,6 +25,6 @@ const zooms: number[] = [
 
 	1 / 3000,
 	1 / 4000,
-];
+].map(i => i * 20);
 
 export { zooms };
