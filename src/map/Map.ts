@@ -24,7 +24,6 @@ class Map {
 	private svg!: SVGSVGElement;
 	private options: MapOption;
 	private zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
-	private zoomLevel: number;
 
 	private layers: Layer[];
 
@@ -38,8 +37,7 @@ class Map {
 		this.width = 0;
 		this.height = 0;
 		this.layers = [];
-		this._level = 5;
-		this.zoomLevel = 1;
+		this._level = 2;
 		// this.zoomLevel = 1;
 
 		this.projection = d3.geoMercator();
@@ -94,23 +92,23 @@ class Map {
 		// 添加缩放事件
 		const zoom = d3
 			.zoom<SVGSVGElement, unknown>()
-			.scaleExtent([zooms[21], zooms[0]])
+			.scaleExtent([zooms[19], zooms[0]])
 			.wheelDelta(event => {
 				if (event.deltaY < 0) {
-					if (this.zoomLevel === 0) return Math.log2(1);
-					this.zoomLevel--;
-					return Math.log2(zooms[this.zoomLevel] / zooms[this.zoomLevel + 1]);
+					if (this._level === 1) return Math.log2(1);
+					this._level--;
+					return Math.log2(zooms[this._level - 1] / zooms[this._level]);
 				} else {
-					if (this.zoomLevel === 19) return Math.log2(1);
-					this.zoomLevel++;
-					return Math.log2(zooms[this.zoomLevel] / zooms[this.zoomLevel - 1]);
+					if (this._level === 20) return Math.log2(1);
+					this._level++;
+					return Math.log2(zooms[this._level - 1] / zooms[this._level - 2]);
 				}
 			})
 			.on("zoom", e => {
 				g.attr("transform", e.transform);
 			});
 		this.zoom = zoom;
-		zoom.scaleBy(svg, zooms[this.zoomLevel]);
+		zoom.scaleBy(svg, zooms[this._level - 1]);
 		svg.transition().duration(1000);
 		zoom.duration(1000);
 		svg
@@ -170,16 +168,16 @@ class Map {
 	/**
 	 * 移动到指定点位
 	 * @param coord 点位bd09坐标
-	 * @param zoomLevel 地图缩放层级
+	 * @param zoomLevel 地图缩放层级[1-20]
 	 */
-	moveTo(coord: [number, number], zoomLevel: number = 5) {
-		// TODO zoomlevel含义变化，后续需处理只能传入整数
+	moveTo(coord: [number, number], zoomLevel: number = 2) {
+		this._level = zoomLevel;
 		const svg = d3.select(this.svg);
 		const realCoord = this.projection(coord)!;
-		const t = d3.zoomIdentity.scale(zoomLevel).apply(realCoord);
+		const t = d3.zoomIdentity.scale(zooms[zoomLevel - 1]).apply(realCoord);
 		const m = d3.zoomIdentity
 			.translate(-(t[0] - this.width / 2), -(t[1] - this.height / 2))
-			.scale(zoomLevel);
+			.scale(zooms[zoomLevel - 1]);
 		svg.transition().duration(1000).call(this.zoom.transform, m);
 	}
 
@@ -213,16 +211,23 @@ class Map {
 
 		const scale =
 			Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
-		if (scale < 1 / 2) {
-			this.moveTo(middle, 0.5);
-		} else if (scale > 5) {
-			this.moveTo(middle, 5);
+
+		const diffs = zooms.map(i => Math.abs(scale - i));
+		const minDiff = Math.min(...diffs);
+		const index = diffs.indexOf(minDiff);
+
+		if (index < 19) {
+			this.moveTo(middle, index + 2);
 		} else {
-			this.moveTo(middle, scale);
+			this.moveTo(middle, index + 1);
 		}
 	}
-
+	/**
+	 * 设定地图缩放等级
+	 * @param {number} level 地图缩放等级
+	 */
 	setLevel(level: number) {
+		const curLevel = this._level;
 		if (level >= 20) {
 			this._level = 20;
 		} else if (level <= 1) {
@@ -230,8 +235,10 @@ class Map {
 		} else {
 			this._level = Math.floor(level);
 		}
-		this.zoomLevel = this._level * 0.25 + 0.02;
-		this.zoom.scaleBy(d3.select(this.svg), this.zoomLevel);
+		this.zoom.scaleBy(
+			d3.select(this.svg).transition().duration(500),
+			zooms[this._level - 1] / zooms[curLevel - 1]
+		);
 	}
 }
 

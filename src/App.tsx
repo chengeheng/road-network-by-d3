@@ -511,14 +511,14 @@ function App() {
 		},
 		{
 			label: "更改地图层级到最大",
-			onclick: () => {
+			onClick: () => {
 				if (!map) return;
 				map.setLevel(20);
 			},
 		},
 		{
 			label: "更改地图层级到最小",
-			onclick: () => {
+			onClick: () => {
 				if (!map) return;
 				map.setLevel(1);
 			},
