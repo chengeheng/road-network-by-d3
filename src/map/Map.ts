@@ -180,10 +180,10 @@ class Map {
 		}
 		const svg = d3.select(this.svg);
 		const realCoord = this.projection(coord)!;
-		const t = d3.zoomIdentity.scale(zooms[zoomLevel - 1]).apply(realCoord);
+		const t = d3.zoomIdentity.scale(zooms[this._level - 1]).apply(realCoord);
 		const m = d3.zoomIdentity
 			.translate(-(t[0] - this.width / 2), -(t[1] - this.height / 2))
-			.scale(zooms[zoomLevel - 1]);
+			.scale(zooms[this._level - 1]);
 		svg.transition().duration(1000).call(this.zoom.transform, m);
 	}
 
