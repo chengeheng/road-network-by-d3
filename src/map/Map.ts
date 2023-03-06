@@ -171,7 +171,13 @@ class Map {
 	 * @param zoomLevel 地图缩放层级[1-20]
 	 */
 	moveTo(coord: [number, number], zoomLevel: number = 2) {
-		this._level = zoomLevel;
+		if (zoomLevel < 1) {
+			this._level = 1;
+		} else if (zoomLevel > 20) {
+			this._level = 20;
+		} else {
+			this._level = Math.floor(zoomLevel);
+		}
 		const svg = d3.select(this.svg);
 		const realCoord = this.projection(coord)!;
 		const t = d3.zoomIdentity.scale(zooms[zoomLevel - 1]).apply(realCoord);
