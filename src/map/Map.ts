@@ -16,18 +16,18 @@ const defaultOptions = {
 };
 
 class Map {
-	private id: string;
-	private container: HTMLElement;
-	private map!: SVGGElement;
-	private width: number;
-	private height: number;
-	private svg!: SVGSVGElement;
+	id: string;
+	width: number;
+	height: number;
 	private options: MapOption;
-	private zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
-
-	private layers: Layer[];
 
 	private _level: number;
+	private _layers: Layer[];
+	private _map!: SVGGElement;
+	private _container: HTMLElement;
+	private _zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
+	private _svg!: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+	private _mapContainer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 
 	projection: d3.GeoProjection;
 
@@ -36,7 +36,7 @@ class Map {
 		this.id = id;
 		this.width = 0;
 		this.height = 0;
-		this.layers = [];
+		this._layers = [];
 		this._level = 2;
 		// this.zoomLevel = 1;
 
@@ -46,7 +46,7 @@ class Map {
 		if (container === null) {
 			throw Error("地图容器的id不能为空");
 		} else {
-			this.container = container;
+			this._container = container;
 
 			const option = { ...defaultOptions, ...options };
 			this.options = option;
@@ -60,37 +60,36 @@ class Map {
 				.center(option.center!)
 				.translate([rect.width / 2, rect.height / 2]);
 
-			this.init();
+			this._init();
 			const resizeObserver = new ResizeObserver(e => {
-				const rect = container.getBoundingClientRect();
+				const rect = this._container.getBoundingClientRect();
 				this.width = rect.width;
 				this.height = rect.height;
-				d3.select(this.svg)
-					.attr("width", rect.width)
-					.attr("height", rect.height);
+
+				this._svg.attr("width", rect.width).attr("height", rect.height);
 			});
-			resizeObserver.observe(container);
+			resizeObserver.observe(this._container);
 		}
 	}
 	//  初始化地图
-	private init() {
-		const container = d3.select(this.container);
-		container.select("svg").remove();
+	private _init() {
+		const container = d3.select(this._container);
+		container.selectAll("svg").remove();
 
-		const svg = container
+		this._svg = container
 			.append("svg")
 			.attr("width", this.width)
 			.attr("height", this.height)
 			.style("cursor", "pointer");
+
 		if (this.options.class) {
-			svg.attr("class", this.options.class);
+			this._svg.attr("class", this.options.class);
 		}
-		const g = svg.append("g");
-		this.map = g.node()!;
-		this.svg = svg.node()!;
+		this._mapContainer = this._svg.append("g");
+		this._map = this._mapContainer.append("g").attr("id", "layers").node()!;
 
 		// 添加缩放事件
-		const zoom = d3
+		this._zoom = d3
 			.zoom<SVGSVGElement, unknown>()
 			.scaleExtent([zooms[19], zooms[0]])
 			.wheelDelta(event => {
@@ -105,19 +104,22 @@ class Map {
 				}
 			})
 			.on("zoom", e => {
-				g.attr("transform", e.transform);
+				this._mapContainer.attr("transform", e.transform);
 			});
-		this.zoom = zoom;
-		zoom.scaleBy(svg, zooms[this._level - 1]);
-		svg.transition().duration(1000);
-		zoom.duration(1000);
-		svg
-			.call(zoom)
+
+		this._zoom.scaleBy(this._svg, zooms[this._level - 1]);
+		this._svg.transition().duration(1000);
+		this._zoom.duration(1000);
+		this._svg
+			.call(this._zoom)
 			.on("click", e => {
 				const projection = this.projection;
 				// console.log(d3.pointer(e, g.node()));
 				if (this.options.onClick) {
-					this.options.onClick(e, projection.invert!(d3.pointer(e, g.node())));
+					this.options.onClick(
+						e,
+						projection.invert!(d3.pointer(e, this._mapContainer.node()))
+					);
 				}
 			})
 			.on("dblclick.zoom", null);
@@ -127,17 +129,17 @@ class Map {
 	 * @param layer 图层实例
 	 */
 	addLayer(layer: Layer) {
-		this.layers.push(layer);
-		layer.init(this.map, this.projection);
+		this._layers.push(layer);
+		layer.init(this._map, this.projection);
 	}
 	/**
 	 * 删除图层
 	 * @param layer 图层实例
 	 */
 	removeLayer(layer: Layer) {
-		for (let i = 0; i < this.layers.length; i++) {
-			if (this.layers[i] === layer) {
-				this.layers.splice(i, 1);
+		for (let i = 0; i < this._layers.length; i++) {
+			if (this._layers[i] === layer) {
+				this._layers.splice(i, 1);
 			}
 		}
 		layer.remove();
@@ -148,7 +150,7 @@ class Map {
 	 */
 	showLayer(layer?: Layer) {
 		if (layer === undefined) {
-			this.layers.forEach(i => i.show());
+			this._layers.forEach(i => i.show());
 		} else {
 			layer.show();
 		}
@@ -159,7 +161,7 @@ class Map {
 	 */
 	hideLayer(layer?: Layer) {
 		if (layer === undefined) {
-			this.layers.forEach(i => i.hide());
+			this._layers.forEach(i => i.hide());
 		} else {
 			layer.show();
 		}
@@ -178,13 +180,13 @@ class Map {
 		} else {
 			this._level = Math.floor(zoomLevel);
 		}
-		const svg = d3.select(this.svg);
+
 		const realCoord = this.projection(coord)!;
 		const t = d3.zoomIdentity.scale(zooms[this._level - 1]).apply(realCoord);
 		const m = d3.zoomIdentity
 			.translate(-(t[0] - this.width / 2), -(t[1] - this.height / 2))
 			.scale(zooms[this._level - 1]);
-		svg.transition().duration(1000).call(this.zoom.transform, m);
+		this._svg.transition().duration(1000).call(this._zoom.transform, m);
 	}
 
 	/**
@@ -241,11 +243,14 @@ class Map {
 		} else {
 			this._level = Math.floor(level);
 		}
-		this.zoom.scaleBy(
-			d3.select(this.svg).transition().duration(500),
+		this._zoom.scaleBy(
+			this._svg.transition().duration(500),
 			zooms[this._level - 1] / zooms[curLevel - 1]
 		);
 	}
+
+	// TODO 添加绘制面的工具
+	paintPolygon() {}
 }
 
 export default Map;
