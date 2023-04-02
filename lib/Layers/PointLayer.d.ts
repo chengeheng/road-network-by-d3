@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps } from ".";
+import { InitConfigProps } from "../Map";
 interface PointLayerOption extends LayerOptionProps {
     icon?: string;
     width?: number;
@@ -7,6 +8,7 @@ interface PointLayerOption extends LayerOptionProps {
     offset?: [number, number];
     rotate?: number;
     hoverColor?: string;
+    imageShrink?: boolean;
     stopPropagation?: boolean;
     onClick?: Function;
     onRightClick?: Function;
@@ -38,15 +40,17 @@ declare class PointLayer extends Layer {
     private clickCount;
     private clickTimer;
     private filterIds;
+    private _mapConfig;
+    private _imageShrink;
     constructor(dataSource: PointDataSourceProps[], option?: PointLayerOption);
     private _initState;
     private _drawWithHoverColor;
-    private drawWithOutHoverColor;
+    private _drawWithOutHoverColor;
     private _formatData;
     private _makeFilterMatrix;
     private _hexToRgb;
     protected _draw(): void;
-    init(g: SVGGElement, projection: d3.GeoProjection): void;
+    init(g: SVGGElement, projection: d3.GeoProjection, config: InitConfigProps): void;
     remove(): void;
     /**
      * 显示当前图层
@@ -59,6 +63,7 @@ declare class PointLayer extends Layer {
     enableLayerFunc(): void;
     disableLayerFunc(): void;
     updateData(data: PointDataSourceProps[]): void;
+    updateMapConfig(config: InitConfigProps): void;
 }
 export type { PointDataSourceProps };
 export default PointLayer;

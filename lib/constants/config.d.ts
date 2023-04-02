@@ -1,2 +1,3 @@
 declare const zooms: number[];
-export { zooms };
+declare const zoomsTotal: number;
+export { zooms, zoomsTotal };

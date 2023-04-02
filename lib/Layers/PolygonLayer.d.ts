@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps } from ".";
+import { InitConfigProps } from "../Map";
 interface NameStyleProps {
     color?: string;
     fontWeight?: string | number;
@@ -100,7 +101,7 @@ declare class PolygonLayer extends Layer {
     private _drawHoverLayer;
     private _formatData;
     protected _draw(): void;
-    init(g: SVGGElement, projection: d3.GeoProjection): void;
+    init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps): void;
     remove(): void;
     /**
      * 显示当前图层

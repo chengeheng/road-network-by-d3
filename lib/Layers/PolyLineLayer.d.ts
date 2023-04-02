@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps } from ".";
+import { InitConfigProps } from "../Map";
 type polyLineItem = {
     id: string | number;
     coordinates: [number, number][];
@@ -85,7 +86,7 @@ declare class PolyLineLayer extends Layer {
     private _insideInStandardRect;
     private _insideInRect;
     private _isPointInLine;
-    init(g: SVGGElement, projection: d3.GeoProjection): void;
+    init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps): void;
     remove(): void;
     /**
      * 显示当前图层

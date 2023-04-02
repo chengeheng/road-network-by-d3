@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps } from ".";
+import { InitConfigProps } from "../Map";
 interface StyleProps {
     color?: string;
     fontWeight?: string;
@@ -33,7 +34,7 @@ declare class LabelLayer extends Layer {
     private _combineOption;
     private _initState;
     private _formatData;
-    init(g: SVGGElement, projection: d3.GeoProjection): void;
+    init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps): void;
     remove(): void;
     /**
      * 显示当前图层

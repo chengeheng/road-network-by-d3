@@ -6,21 +6,26 @@ interface MapOption {
     onClick?: Function;
     [propName: string]: any;
 }
+export interface InitConfigProps {
+    level: number;
+}
 declare class Map {
-    private id;
-    private container;
-    private map;
-    private width;
-    private height;
-    private svg;
+    id: string;
+    width: number;
+    height: number;
     private options;
-    private zoom;
-    private zoomLevel;
-    private layers;
     private _level;
+    private _lastLevel;
+    private _layers;
+    private _map;
+    private _container;
+    private _zoom;
+    private _svg;
+    private _mapContainer;
     projection: d3.GeoProjection;
     constructor(id: string, options?: MapOption);
-    private init;
+    private _init;
+    private _updateMapConfig;
     /**
      * 添加图层
      * @param layer 图层实例
@@ -44,7 +49,7 @@ declare class Map {
     /**
      * 移动到指定点位
      * @param coord 点位bd09坐标
-     * @param zoomLevel 地图缩放层级
+     * @param zoomLevel 地图缩放层级[1-20]
      */
     moveTo(coord: [number, number], zoomLevel?: number): void;
     /**
@@ -53,6 +58,11 @@ declare class Map {
      * @returns
      */
     focusOnView(coords: [number, number][]): void;
+    /**
+     * 设定地图缩放等级
+     * @param {number} level 地图缩放等级
+     */
     setLevel(level: number): void;
+    paintPolygon(): void;
 }
 export default Map;
