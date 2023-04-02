@@ -46,12 +46,12 @@ const oldLabelData: LabelDataSourceProps[] = [
 	{
 		id: 1,
 		name: "博园路",
-		coordinate: [118.39053, 31.343104],
+		coordinate: [118.39053, 31.343014],
 		option: {
 			style: {
 				color: "#1176f0",
-				strokeColor: "#ffffff",
-				strokeWidth: 3,
+				// strokeColor: "#ffffff",
+				// strokeWidth: 3,
 			},
 			rotate: 40,
 			stopPropagation: true,
@@ -68,7 +68,7 @@ const oldPointsData: PointDataSourceProps[] = [
 	{
 		id: 1,
 		name: "金宝大酒店",
-		coordinate: [121.313697, 31.510286],
+		coordinate: [118.39053, 31.343104],
 		option: {
 			offset: [0, 18],
 			rotate: 0,
@@ -155,13 +155,6 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 					[121.201589, 31.303175],
 					[121.201589, 31.303175],
 					[121.295875, 31.499448],
-				],
-				reverseCoords: [
-					[118.39102, 31.342313],
-					[118.39102, 31.34172],
-					[118.391572, 31.341739],
-					[118.391451, 31.342275],
-					[118.39102, 31.342313],
 				],
 			},
 			{
@@ -327,8 +320,8 @@ function App() {
 	const [map, setMap] = useState<Map>();
 	useEffect(() => {
 		const map = new Map("container", {
-			center: [118.39057, 31.342792],
-			// center: [121.314890086009, 31.31121052734847],
+			// center: [118.39057, 31.342792],
+			center: [121.314890086009, 31.31121052734847],
 
 			onClick: (...e) => console.log("click map", e),
 		});

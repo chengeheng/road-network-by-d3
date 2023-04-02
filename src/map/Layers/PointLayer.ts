@@ -1,6 +1,9 @@
 import * as d3 from "d3";
 import PointSvg from "../images/point.svg";
 import Layer, { LayerOptionProps, LayerType } from ".";
+import { zooms } from "../constants/config";
+
+import { InitConfigProps } from "../Map";
 
 interface PointLayerOption extends LayerOptionProps {
 	icon?: string;
@@ -9,6 +12,7 @@ interface PointLayerOption extends LayerOptionProps {
 	offset?: [number, number];
 	rotate?: number;
 	hoverColor?: string;
+	imageShrink?: boolean;
 
 	stopPropagation?: boolean;
 	onClick?: Function;
@@ -60,6 +64,8 @@ class PointLayer extends Layer {
 	private clickCount: number;
 	private clickTimer: NodeJS.Timeout | undefined;
 	private filterIds: string[];
+	private _mapConfig!: InitConfigProps;
+	private _imageShrink: boolean;
 
 	constructor(
 		dataSource: PointDataSourceProps[],
@@ -68,6 +74,8 @@ class PointLayer extends Layer {
 		super(LayerType.PointLayer, option);
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
+		this._imageShrink =
+			option.imageShrink === undefined ? true : option.imageShrink;
 		this.clickCount = 0;
 		this.isHided = false;
 		this.filterIds = [];
@@ -187,11 +195,11 @@ class PointLayer extends Layer {
 				d => `translate(${0},${d.option.offset[1] - d.option.height})`
 			)
 			.style("text-anchor", "middle")
-			.attr("font-size", 12)
+			.attr("font-size", d => d.option.fontSize)
 			.text(d => d.name!);
 	}
 
-	private drawWithOutHoverColor() {
+	private _drawWithOutHoverColor() {
 		const g = this.baseLayer
 			.selectAll("g")
 			.data(this._formatData(this.data))
@@ -264,6 +272,12 @@ class PointLayer extends Layer {
 				}
 			});
 
+		// g.append("circle")
+		// 	.attr("cx", d => d.coordinate[0])
+		// 	.attr("cy", d => d.coordinate[1])
+		// 	.attr("r", 5)
+		// 	.attr("fill", "black");
+
 		g.filter(i => {
 			if (i.name) {
 				return true;
@@ -279,17 +293,25 @@ class PointLayer extends Layer {
 				"transform",
 				d => `translate(${0},${d.option.offset[1] - d.option.height})`
 			)
-			.attr("font-size", 12)
+			.attr("font-size", d => d.option.fontSize)
 			.text(d => d.name!);
 	}
 
 	private _formatData(data: PointDataSourceProps[]) {
 		return data.map(i => {
 			const option = { ...this.option, ...i.option };
-			const { offset } = option;
+			let { offset } = option;
 			const coordinate = this.projection(i.coordinate)!;
-			const width = option.width;
-			const height = option.height;
+			let width = option.width;
+			let height = option.height;
+			let fontSize = 12;
+			if (this._imageShrink) {
+				const scale = 1 / zooms[this._mapConfig.level - 1];
+				width = option.width * scale;
+				height = option.height * scale;
+				offset = [offset[0] * scale, offset[1] * scale];
+				fontSize = fontSize * scale;
+			}
 			const imageCenter: [number, number] = [
 				coordinate[0] + offset[0],
 				coordinate[1] + offset[1] - height / 2,
@@ -298,11 +320,12 @@ class PointLayer extends Layer {
 				coordinate[0] + offset[0] - width / 2,
 				coordinate[1] + offset[1] - height,
 			];
+
 			return {
 				...i,
 				coordinate: coordinate,
 				icon: i.icon ?? i.option?.icon ?? this.option.icon,
-				option: option,
+				option: { ...option, width, height, offset, fontSize },
 				imageCenter,
 				imageLeftTop,
 			};
@@ -349,12 +372,13 @@ class PointLayer extends Layer {
 		if (this.option.hoverColor) {
 			this._drawWithHoverColor();
 		} else {
-			this.drawWithOutHoverColor();
+			this._drawWithOutHoverColor();
 		}
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
-		super.init(g, projection);
+	init(g: SVGGElement, projection: d3.GeoProjection, config: InitConfigProps) {
+		super.init(g, projection, config);
+		this._mapConfig = config;
 		this.container = d3
 			.select(g)
 			.append("g")
@@ -399,6 +423,12 @@ class PointLayer extends Layer {
 		this._initState();
 		this.container.style("display", "inline");
 		// 绘制
+		this._draw();
+	}
+
+	updateMapConfig(config: InitConfigProps) {
+		this._mapConfig = config;
+		this.baseLayer.selectAll("*").remove();
 		this._draw();
 	}
 }

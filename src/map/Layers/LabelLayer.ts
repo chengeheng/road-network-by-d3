@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps, LayerType } from ".";
+import { InitConfigProps } from "../Map";
 
 interface StyleProps {
 	color?: string;
@@ -120,8 +121,8 @@ class LabelLayer extends Layer {
 		});
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
-		super.init(g, projection);
+	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {
+		super.init(g, projection, option);
 		this.container = d3
 			.select(g)
 			.append("g")

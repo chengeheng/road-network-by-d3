@@ -1,5 +1,7 @@
 import * as d3 from "d3";
 
+import { InitConfigProps } from "../Map";
+
 enum LayerType {
 	PointLayer,
 	PolygonLayer,
@@ -21,7 +23,7 @@ class Layer {
 		this.projection = d3.geoMercator();
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
+	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {
 		this.map = g;
 		this.projection = projection;
 	}
@@ -35,6 +37,9 @@ class Layer {
 	// 打开和关系图层所有功能，只做展示使用
 	enableLayerFunc() {}
 	disableLayerFunc() {}
+
+	// 更新地图的全局配置
+	updateMapConfig(config: InitConfigProps) {}
 
 	protected makeRandomId(): string {
 		const chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";

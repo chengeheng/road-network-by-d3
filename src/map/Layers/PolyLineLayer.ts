@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps, LayerType } from ".";
+import { InitConfigProps } from "../Map";
 
 type polyLineItem = {
 	id: string | number;
@@ -566,8 +567,8 @@ class PolyLineLayer extends Layer {
 		return false;
 	}
 
-	init(g: SVGGElement, projection: d3.GeoProjection) {
-		super.init(g, projection);
+	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {
+		super.init(g, projection, option);
 		this.path = d3.geoPath<any, any>().projection(projection);
 		this.container = d3
 			.select(g)

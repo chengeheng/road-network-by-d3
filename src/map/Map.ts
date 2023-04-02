@@ -15,6 +15,10 @@ const defaultOptions = {
 	onClick: () => {},
 };
 
+export interface InitConfigProps {
+	level: number;
+}
+
 class Map {
 	id: string;
 	width: number;
@@ -22,6 +26,7 @@ class Map {
 	private options: MapOption;
 
 	private _level: number;
+	private _lastLevel: number;
 	private _layers: Layer[];
 	private _map!: SVGGElement;
 	private _container: HTMLElement;
@@ -38,6 +43,7 @@ class Map {
 		this.height = 0;
 		this._layers = [];
 		this._level = 2;
+		this._lastLevel = 2;
 		// this.zoomLevel = 1;
 
 		this.projection = d3.geoMercator();
@@ -93,6 +99,7 @@ class Map {
 			.zoom<SVGSVGElement, unknown>()
 			.scaleExtent([zooms[19], zooms[0]])
 			.wheelDelta(event => {
+				this._lastLevel = this._level;
 				if (event.deltaY < 0) {
 					if (this._level === 1) return Math.log2(1);
 					this._level--;
@@ -105,6 +112,9 @@ class Map {
 			})
 			.on("zoom", e => {
 				this._mapContainer.attr("transform", e.transform);
+				if (this._lastLevel !== this._level) {
+					this._updateMapConfig();
+				}
 			});
 
 		this._zoom.scaleBy(this._svg, zooms[this._level - 1]);
@@ -124,13 +134,20 @@ class Map {
 			})
 			.on("dblclick.zoom", null);
 	}
+
+	private _updateMapConfig() {
+		const config: InitConfigProps = {
+			level: this._level,
+		};
+		this._layers.forEach(i => i.updateMapConfig(config));
+	}
 	/**
 	 * 添加图层
 	 * @param layer 图层实例
 	 */
 	addLayer(layer: Layer) {
 		this._layers.push(layer);
-		layer.init(this._map, this.projection);
+		layer.init(this._map, this.projection, { level: this._level });
 	}
 	/**
 	 * 删除图层
@@ -173,6 +190,7 @@ class Map {
 	 * @param zoomLevel 地图缩放层级[1-20]
 	 */
 	moveTo(coord: [number, number], zoomLevel: number = 2) {
+		this._lastLevel = this._level;
 		if (zoomLevel < 1) {
 			this._level = 1;
 		} else if (zoomLevel > 20) {
@@ -187,6 +205,9 @@ class Map {
 			.translate(-(t[0] - this.width / 2), -(t[1] - this.height / 2))
 			.scale(zooms[this._level - 1]);
 		this._svg.transition().duration(1000).call(this._zoom.transform, m);
+		if (this._lastLevel !== this._level) {
+			this._updateMapConfig();
+		}
 	}
 
 	/**
@@ -235,7 +256,7 @@ class Map {
 	 * @param {number} level 地图缩放等级
 	 */
 	setLevel(level: number) {
-		const curLevel = this._level;
+		this._lastLevel = this._level;
 		if (level >= 20) {
 			this._level = 20;
 		} else if (level <= 1) {
@@ -245,7 +266,7 @@ class Map {
 		}
 		this._zoom.scaleBy(
 			this._svg.transition().duration(500),
-			zooms[this._level - 1] / zooms[curLevel - 1]
+			zooms[this._level - 1] / zooms[this._lastLevel - 1]
 		);
 	}
 
