@@ -6,6 +6,7 @@ import Layer from "./Layers";
 interface MapOption {
 	center?: [number, number];
 	class?: string;
+	level?: number;
 	onClick?: Function;
 	[propName: string]: any;
 }
@@ -13,6 +14,7 @@ interface MapOption {
 const defaultOptions = {
 	center: [118.39067530252157, 31.343146080447582] as [number, number],
 	onClick: () => {},
+	level: 2,
 };
 
 export interface InitConfigProps {
@@ -29,6 +31,7 @@ class Map {
 	private _lastLevel: number;
 	private _layers: Layer[];
 	private _map!: SVGGElement;
+	private _toolMap!: SVGGElement;
 	private _container: HTMLElement;
 	private _zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
 	private _svg!: d3.Selection<SVGSVGElement, unknown, null, undefined>;
@@ -42,10 +45,8 @@ class Map {
 		this.width = 0;
 		this.height = 0;
 		this._layers = [];
-		this._level = 2;
-		this._lastLevel = 2;
-		// this.zoomLevel = 1;
-
+		this._level = options.level === undefined ? 2 : options.level;
+		this._lastLevel = this._level;
 		this.projection = d3.geoMercator();
 
 		const container = document.getElementById(this.id);
@@ -93,6 +94,11 @@ class Map {
 		}
 		this._mapContainer = this._svg.append("g");
 		this._map = this._mapContainer.append("g").attr("id", "layers").node()!;
+		this._toolMap = this._mapContainer
+			.append("g")
+			.attr("id", "tools")
+			.style("pointer-events", "none")
+			.node()!;
 
 		// 添加缩放事件
 		this._zoom = d3
@@ -120,8 +126,19 @@ class Map {
 		this._zoom.scaleBy(this._svg, zooms[this._level - 1]);
 		this._svg.transition().duration(1000);
 		this._zoom.duration(1000);
+		this._svg.call(this._zoom);
+		this._addClickFn();
+	}
+
+	private _updateMapConfig() {
+		const config: InitConfigProps = {
+			level: this._level,
+		};
+		this._layers.forEach(i => i.updateMapConfig(config));
+	}
+
+	private _addClickFn() {
 		this._svg
-			.call(this._zoom)
 			.on("click", e => {
 				const projection = this.projection;
 				// console.log(d3.pointer(e, g.node()));
@@ -134,13 +151,10 @@ class Map {
 			})
 			.on("dblclick.zoom", null);
 	}
-
-	private _updateMapConfig() {
-		const config: InitConfigProps = {
-			level: this._level,
-		};
-		this._layers.forEach(i => i.updateMapConfig(config));
+	private _removeClickFn() {
+		this._svg.on("click", null);
 	}
+
 	/**
 	 * 添加图层
 	 * @param layer 图层实例
@@ -271,7 +285,15 @@ class Map {
 	}
 
 	// TODO 添加绘制面的工具
-	paintPolygon() {}
+	paintPolygon() {
+		d3.select(this._map).style("pointer-events", "none");
+		return new Promise((resolve, reject) => {
+			console.log(this);
+		});
+		// d3.select(this._toolMap).on("click", e => {
+		// 	console.log(e);
+		// });
+	}
 }
 
 export default Map;

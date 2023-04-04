@@ -321,8 +321,8 @@ function App() {
 	useEffect(() => {
 		const map = new Map("container", {
 			// center: [118.39057, 31.342792],
-			center: [121.314890086009, 31.31121052734847],
-
+			center: [121.315422, 31.221684],
+			level: 10,
 			onClick: (...e) => console.log("click map", e),
 		});
 		const pointlayer = new PointLayer(oldPointsData);
@@ -514,6 +514,13 @@ function App() {
 			onClick: () => {
 				if (!map) return;
 				map.setLevel(1);
+			},
+		},
+		{
+			label: "调用画线工具",
+			onClick: () => {
+				if (!map) return;
+				map.paintPolygon();
 			},
 		},
 	];
