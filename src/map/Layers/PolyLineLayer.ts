@@ -33,6 +33,7 @@ interface PolyLineLayerOptionProps extends LayerOptionProps {
 	onRightClick?: Function;
 	onDbClick?: Function;
 	onHover?: Function;
+	onLeave?: Function;
 	selectType?: "link" | "path" | "all";
 }
 
@@ -70,7 +71,22 @@ interface _PolyLineOptionProps {
 	onRightClick: Function;
 	onDbClick: Function;
 	onHover: Function;
+	onLeave: Function;
 	selectType: "link" | "path" | "all";
+}
+
+interface _DrawParameterProps {
+	type: string;
+	geometry: {
+		type: string;
+		coordinates: [number, number][][];
+	};
+	properties: {
+		option: _PolyLineOptionProps;
+		ids: (string | number)[];
+		originData: PolyLineDataSourceProps;
+		[propName: string]: any;
+	};
 }
 
 const defaultOption = {
@@ -87,6 +103,7 @@ const defaultOption = {
 	onRightClick: () => {},
 	onDbClick: () => {},
 	onHover: () => {},
+	onLeave: () => {},
 	selectType: "link" as "link" | "path" | "all",
 };
 
@@ -108,10 +125,7 @@ class PolyLineLayer extends Layer {
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 	private _hover: boolean;
 
-	constructor(
-		dataSource: PolyLineDataSourceProps[],
-		option?: PolyLineLayerOptionProps
-	) {
+	constructor(dataSource: PolyLineDataSourceProps[], option?: PolyLineLayerOptionProps) {
 		super(LayerType.PolygonLayer, option);
 		this.data = dataSource;
 		this.option = this._combineOption(option);
@@ -124,9 +138,7 @@ class PolyLineLayer extends Layer {
 		this._hover = false;
 	}
 
-	private _combineOption(
-		option: PolyLineLayerOptionProps = defaultOption
-	): _PolyLineOptionProps {
+	private _combineOption(option: PolyLineLayerOptionProps = defaultOption): _PolyLineOptionProps {
 		const { style = {}, hoverStyle = {}, selectStyle = {}, ...rest } = option;
 
 		return {
@@ -179,166 +191,97 @@ class PolyLineLayer extends Layer {
 					e.stopPropagation();
 				}
 				this._clickCount++;
-				const originData = d.properties.originData;
-				let index = -1;
-				const coordinates = d.geometry.coordinates;
-				for (let i = 0; i < coordinates.length; i++) {
-					const [inPoint] = this._isPointInLine(
-						coordinates[i],
-						d3.pointer(e, this.container.node())!,
-						this.projection,
-						d.properties.option.style.strokeWidth
-					);
-
-					if (inPoint) {
-						index = i;
-						break;
-					}
-				}
-
-				let originalParams: any;
-				if (this._selectType === "all") {
-					originalParams = this.data;
-				} else if (this._selectType === "path") {
-					originalParams = d.properties.originData;
-				} else {
-					originalParams = originData?.data[index];
-				}
+				const [data, index] = this._formatReturnedData(e, d);
 				clearTimeout(this._clickTimer);
 				this._clickTimer = setTimeout(() => {
 					if (this._clickCount % 2 === 1) {
 						this._clickCount--;
-						const clickFn = d.properties.option.onClick;
 						const selectable = d.properties.option.selectable;
 						if (selectable) {
-							this._selectIndex = this.combineIndex(
-								this._selectIndex,
-								d.properties.index,
-								index
-							);
-							this._selectLayer.select("*").remove();
+							this._selectIndex = this.combineIndex(this._selectIndex, d.properties.index, index);
 							this._drawSelectLayer();
 						}
-						if (clickFn) {
-							clickFn({
-								data: originalParams,
-								PointerEvent: e,
-								target: {
-									index,
-									data: originalParams,
-									selected: this._selectIndex.get(d.properties.index)
-										? this._selectIndex.get(d.properties.index)!.has(index)
-										: false,
-								},
-								originData,
-							});
-						}
+						d.properties.option.onClick(data);
 					} else {
 						this._clickCount = 0;
-						const dblClickFn = d.properties.option.onDbClick;
-						if (dblClickFn) {
-							dblClickFn({
-								data: originalParams,
-								PointerEvent: e,
-								target: {
-									index,
-									data: originalParams,
-									selected: this._selectIndex.get(d.properties.index)
-										? this._selectIndex.get(d.properties.index)!.has(index)
-										: false,
-								},
-								originData,
-							});
-						}
+						d.properties.option.onDbClick(data);
 					}
 				}, 300);
 			})
 			.on("mousemove", (e, d) => {
 				this._hover = true;
 				const hasHover = d.properties.option.hasHover;
-
 				if (hasHover) {
-					let index = -1;
-					let startIndex = -1;
-					let endIndex = -1;
-					const coordinates = d.geometry.coordinates;
-					for (let i = 0; i < coordinates.length; i++) {
-						const [inPoint, start, end] = this._isPointInLine(
-							coordinates[i],
-							d3.pointer(e, this.container.node())!,
-							this.projection,
-							d.properties.option.style.strokeWidth
-						);
-
-						if (inPoint) {
-							index = i;
-							startIndex = start;
-							endIndex = end;
-							break;
-						}
-					}
-
-					this._hoverIndex = this.combineIndex(
-						new Map(),
-						d.properties.index,
-						index
-					);
-
-					if (index > -1) {
+					const [data, index] = this._formatReturnedData(e, d);
+					this._hoverIndex = this.combineIndex(new Map(), d.properties.index, index as number);
+					if ((index as number) > -1) {
 						this._drawHoverLayer();
-						d.properties.option.onHover({
-							targetData: d.properties.originData,
-							startIndex: startIndex,
-							endIndex: endIndex,
-						});
+						d.properties.option.onHover(data);
 					}
 				}
 			})
-			.on("mouseleave", () => {
+			.on("mouseleave", (e, d) => {
 				this._hover = false;
 				this._hoverLayer.selectAll("*").remove();
+				if (d.properties.option.onLeave) {
+					const [data] = this._formatReturnedData(e, d);
+					d.properties.option.onLeave(data);
+				}
 			})
 			.on("contextmenu", (e, d) => {
-				let index = -1;
-				const coordinates = d.geometry.coordinates;
-				for (let i = 0; i < coordinates.length; i++) {
-					const [inPoint] = this._isPointInLine(
-						coordinates[i],
-						d3.pointer(e, this.container.node())!,
-						this.projection,
-						d.properties.option.style.strokeWidth
-					);
-
-					if (inPoint) {
-						index = i;
-						break;
-					}
-				}
-
-				let originalParams: any;
-				if (this._selectType === "all") {
-					originalParams = this.data;
-				} else if (this._selectType === "path") {
-					originalParams = d.properties.originData;
-				} else {
-					originalParams = d.properties.originData?.data[index];
-				}
-				const rightClickFn = d.properties.option.onRightClick;
-				if (rightClickFn) {
-					rightClickFn({
-						data: originalParams,
-						PointerEvent: e,
-						target: {
-							index,
-							data: originalParams,
-							selected: this._selectIndex.get(d.properties.index)
-								? this._selectIndex.get(d.properties.index)!.has(index)
-								: false,
-						},
-						originData: d.properties.originData,
-					});
-				}
+				const [data] = this._formatReturnedData(e, d);
+				d.properties.option.onRightClick(data);
 			});
+	}
+
+	private _formatReturnedData(e: any, d: _DrawParameterProps): [any, number] {
+		let index: number = -1;
+		let startIndex = -1;
+		let endIndex = -1;
+		const coordinates = d.geometry.coordinates;
+		const lineWidth = d.properties.option.style.strokeWidth;
+		const targetCoord = d3.pointer(e, this.container.node())!;
+		for (let i = 0; i < coordinates.length; i++) {
+			const [inPoint, start, end] = this._isPointInLine(
+				coordinates[i],
+				targetCoord,
+				this.projection,
+				lineWidth
+			);
+			if (inPoint) {
+				index = i;
+				startIndex = start;
+				endIndex = end;
+				break;
+			}
+		}
+		let originalParams: any;
+		if (this._selectType === "all") {
+			originalParams = this.data;
+		} else if (this._selectType === "path") {
+			originalParams = d.properties.originData;
+		} else {
+			originalParams = d.properties.originData?.data[index];
+		}
+
+		return [
+			{
+				data: originalParams,
+				PointerEvent: e,
+				target: {
+					index,
+					data: originalParams,
+					selected: this._selectIndex.get(d.properties.index)
+						? this._selectIndex.get(d.properties.index)!.has(index)
+						: false,
+					startIndex,
+					endIndex,
+					coordinate: targetCoord,
+				},
+				originData: d.properties.originData,
+			},
+			index,
+		];
 	}
 
 	private _drawSelectLayer() {
@@ -360,9 +303,7 @@ class PolyLineLayer extends Layer {
 			.attr("stroke-width", l => l.properties.option.selectStyle.strokeWidth)
 			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
-				if (
-					l.properties.option.selectStyle.strokeType === StrokeLineType.dotted
-				) {
+				if (l.properties.option.selectStyle.strokeType === StrokeLineType.dotted) {
 					return l.properties.option.selectStyle.strokeDashArray;
 				} else {
 					return null;
@@ -390,9 +331,7 @@ class PolyLineLayer extends Layer {
 			.attr("stroke-width", l => l.properties.option.hoverStyle.strokeWidth)
 			.attr("fill", "none")
 			.attr("stroke-dasharray", l => {
-				if (
-					l.properties.option.hoverStyle.strokeType === StrokeLineType.dotted
-				) {
+				if (l.properties.option.hoverStyle.strokeType === StrokeLineType.dotted) {
 					return l.properties.option.hoverStyle.strokeDashArray;
 				} else {
 					return null;
@@ -403,83 +342,68 @@ class PolyLineLayer extends Layer {
 	private _formatData(
 		data: PolyLineDataSourceProps[],
 		dataFilter?: (e: polyLineItem, idx: number, index: number) => boolean
-	) {
-		return data.reduce(
-			(pre, cur, idx) => {
-				const { data = [], option } = cur;
-				const ids: (string | number)[] = [];
-				const coordinates: [number, number][][] = [];
-				data.forEach((j, innerIndex) => {
-					if (dataFilter) {
-						if (!dataFilter(j, idx, innerIndex)) {
-							return;
-						}
+	): _DrawParameterProps[] {
+		return data.reduce((pre, cur, idx) => {
+			const { data = [], option } = cur;
+			const ids: (string | number)[] = [];
+			const coordinates: [number, number][][] = [];
+			data.forEach((j, innerIndex) => {
+				if (dataFilter) {
+					if (!dataFilter(j, idx, innerIndex)) {
+						return;
 					}
-					ids.push(j.id);
-					coordinates.push(j.coordinates);
-				});
-				const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
-				const onHover = option?.onHover || this.option.onHover;
-				pre.push({
-					type: "Feature",
-					geometry: {
-						type: "MultiLineString",
-						coordinates: coordinates,
-					},
-					properties: {
-						option: {
-							...this.option,
-							...option,
-							style: {
-								...this.option.style,
-								...style,
-							},
-							hoverStyle: {
-								...this.option.hoverStyle,
-								...style,
-								...hoverStyle,
-							},
-							selectStyle: {
-								...this.option.selectStyle,
-								...style,
-								...selectStyle,
-							},
-							hasHover: !!hoverStyle?.strokeColor || this.option.hasHover,
-							onHover: debounce((...e) => {
-								if (this._hover) {
-									onHover(...e);
-								}
-							}, 2000),
-						},
-
-						ids,
-						originData: cur,
-						index: idx,
-					},
-				});
-
-				return pre;
-			},
-			[] as Array<{
-				type: string;
+				}
+				ids.push(j.id);
+				coordinates.push(j.coordinates);
+			});
+			const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
+			const onHover = option?.onHover || this.option.onHover;
+			pre.push({
+				type: "Feature",
 				geometry: {
-					type: string;
-					coordinates: [number, number][][];
-				};
+					type: "MultiLineString",
+					coordinates: coordinates,
+				},
 				properties: {
-					option: _PolyLineOptionProps;
-					ids: (string | number)[];
-					originData: PolyLineDataSourceProps;
-					[propName: string]: any;
-				};
-			}>
-		);
+					option: {
+						...this.option,
+						...option,
+						style: {
+							...this.option.style,
+							...style,
+						},
+						hoverStyle: {
+							...this.option.hoverStyle,
+							...style,
+							...hoverStyle,
+						},
+						selectStyle: {
+							...this.option.selectStyle,
+							...style,
+							...selectStyle,
+						},
+						hasHover: !!hoverStyle?.strokeColor || this.option.hasHover,
+						onHover: debounce((...e) => {
+							if (this._hover) {
+								onHover(...e);
+							}
+						}, 2000),
+					},
+
+					ids,
+					originData: cur,
+					index: idx,
+				},
+			});
+
+			return pre;
+		}, [] as Array<_DrawParameterProps>);
 	}
 
 	private combineIndex<T extends Map<number, Set<number>>>(
 		idxs: T,
-		index: number, // 外部index
-		idx: number // 内部index
+		index: number, // 外部index，pathIndex
+		idx: number // 内部index，linkIndex
 	): T {
 		switch (this._selectType) {
 			case "all": {
@@ -533,18 +457,6 @@ class PolyLineLayer extends Layer {
 		}
 	}
 
-	// private _PointToLine(
-	// 	point: [number, number],
-	// 	lines: [[number, number], [number, number]]
-	// ): number {
-	// 	const [x, y] = point;
-	// 	const [x1, y1] = lines[0];
-	// 	const [x2, y2] = lines[1];
-	// 	const length = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-	// 	const areas = Math.abs((x1 - x) * (y2 - y) - (y1 - y) * (x2 - x));
-	// 	return areas / length;
-	// }
-
 	private _insideInStandardRect(
 		[x1, y1]: [number, number],
 		[x2, y2]: [number, number],
@@ -566,11 +478,7 @@ class PolyLineLayer extends Layer {
 		height: number
 	): boolean {
 		if (y1 === y2) {
-			return this._insideInStandardRect(
-				[x1, y1 - height],
-				[x2, y1 + height],
-				[x, y]
-			);
+			return this._insideInStandardRect([x1, y1 - height], [x2, y1 + height], [x, y]);
 		}
 
 		const l = y2 - y1;
@@ -586,11 +494,7 @@ class PolyLineLayer extends Layer {
 		const xr = x * cos + y * sin;
 		const yr = y * cos - x * sin;
 
-		return this._insideInStandardRect(
-			[x1r, y1r - height],
-			[x2r, y2r + height],
-			[xr, yr]
-		);
+		return this._insideInStandardRect([x1r, y1r - height], [x2r, y2r + height], [xr, yr]);
 	}
 
 	private _isPointInLine(
@@ -602,9 +506,7 @@ class PolyLineLayer extends Layer {
 		if (coordinates.length <= 1) return [false, -1, -1];
 		const lineArr = coordinates.map(projection) as [number, number][];
 		for (let i = 1; i < lineArr.length; i++) {
-			if (
-				this._insideInRect(lineArr[i], lineArr[i - 1], point, lineWidth / 2)
-			) {
+			if (this._insideInRect(lineArr[i], lineArr[i - 1], point, lineWidth / 2)) {
 				return [true, i - 1, i];
 			}
 		}
@@ -615,19 +517,12 @@ class PolyLineLayer extends Layer {
 	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {
 		super.init(g, projection, option);
 		this.path = d3.geoPath<any, any>().projection(projection);
-		this.container = d3
-			.select(g)
-			.append("g")
-			.attr("id", `polyline-layer-${this.makeRandomId()}`);
+		this.container = d3.select(g).append("g").attr("id", `polyline-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
 		this._baseLayer = this.container.append("g");
-		this._selectLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
-		this._hoverLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
+		this._selectLayer = this.container.append("g").style("pointer-events", "none");
+		this._hoverLayer = this.container.append("g").style("pointer-events", "none");
 
 		this._draw();
 	}

@@ -13,6 +13,7 @@ interface PointLayerOption extends LayerOptionProps {
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
+    onHover?: Function;
 }
 interface PointOption extends PointLayerOption {
     icon: string;
@@ -24,6 +25,7 @@ interface PointOption extends PointLayerOption {
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
+    onHover: Function;
 }
 interface PointDataSourceProps {
     id: string | number;
@@ -42,6 +44,7 @@ declare class PointLayer extends Layer {
     private filterIds;
     private _mapConfig;
     private _imageShrink;
+    private _hover;
     constructor(dataSource: PointDataSourceProps[], option?: PointLayerOption);
     private _initState;
     private _drawWithHoverColor;

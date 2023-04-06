@@ -26,6 +26,7 @@ interface PolyLineLayerOptionProps extends LayerOptionProps {
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
+    onHover?: Function;
     selectType?: "link" | "path" | "all";
 }
 interface PolyLineDataSourceProps {
@@ -60,6 +61,7 @@ interface _PolyLineOptionProps {
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
+    onHover: Function;
     selectType: "link" | "path" | "all";
 }
 declare class PolyLineLayer extends Layer {
@@ -76,6 +78,7 @@ declare class PolyLineLayer extends Layer {
     private _hoverIndex;
     private _selectType;
     private _allIndex;
+    private _hover;
     constructor(dataSource: PolyLineDataSourceProps[], option?: PolyLineLayerOptionProps);
     private _combineOption;
     protected _draw(): void;

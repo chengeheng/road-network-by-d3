@@ -37,6 +37,7 @@ interface PolygonLayerOptionProps extends LayerOptionProps {
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
+    onHover?: Function;
     selectType?: "link" | "path" | "all";
 }
 interface _PolygonOptionProps {
@@ -73,6 +74,7 @@ interface _PolygonOptionProps {
     onClick: Function;
     onRightClick: Function;
     onDbClick: Function;
+    onHover: Function;
     selectType: "link" | "path" | "all";
 }
 interface PolygonDataSourceProps {
@@ -94,6 +96,7 @@ declare class PolygonLayer extends Layer {
     private _hoverIndex;
     private _selectType;
     private _allIndex;
+    private _hover;
     constructor(dataSource: PolygonDataSourceProps[], option?: PolygonLayerOptionProps);
     private _combineOption;
     private _combineIndex;

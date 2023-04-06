@@ -3,6 +3,7 @@ import Layer from "./Layers";
 interface MapOption {
     center?: [number, number];
     class?: string;
+    level?: number;
     onClick?: Function;
     [propName: string]: any;
 }
@@ -18,6 +19,7 @@ declare class Map {
     private _lastLevel;
     private _layers;
     private _map;
+    private _toolMap;
     private _container;
     private _zoom;
     private _svg;
@@ -26,6 +28,8 @@ declare class Map {
     constructor(id: string, options?: MapOption);
     private _init;
     private _updateMapConfig;
+    private _addClickFn;
+    private _removeClickFn;
     /**
      * 添加图层
      * @param layer 图层实例
@@ -63,6 +67,6 @@ declare class Map {
      * @param {number} level 地图缩放等级
      */
     setLevel(level: number): void;
-    paintPolygon(): void;
+    paintPolygon(): Promise<unknown>;
 }
 export default Map;
