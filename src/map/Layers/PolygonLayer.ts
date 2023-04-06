@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps, LayerType } from ".";
 import { InitConfigProps } from "../Map";
+import { debounce } from "lodash";
 
 interface NameStyleProps {
 	color?: string;
@@ -43,6 +44,7 @@ interface PolygonLayerOptionProps extends LayerOptionProps {
 	onClick?: Function;
 	onRightClick?: Function;
 	onDbClick?: Function;
+	onHover?: Function;
 	selectType?: "link" | "path" | "all";
 }
 
@@ -81,6 +83,7 @@ interface _PolygonOptionProps {
 	onClick: Function;
 	onRightClick: Function;
 	onDbClick: Function;
+	onHover: Function;
 	selectType: "link" | "path" | "all";
 }
 
@@ -130,6 +133,7 @@ const defaultOption = {
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
+	onHover: () => {},
 	selectType: "link" as "link" | "path" | "all",
 };
 
@@ -157,6 +161,7 @@ class PolygonLayer extends Layer {
 	private _hoverIndex: Map<number, Set<number>>;
 	private _selectType: "link" | "path" | "all"; // 选中的类型
 	private _allIndex: Map<number, Set<number>>; // 全部的index
+	private _hover: boolean;
 
 	constructor(
 		dataSource: PolygonDataSourceProps[],
@@ -172,6 +177,7 @@ class PolygonLayer extends Layer {
 		this._selectType = this.option.selectType;
 		this._allIndex = new Map();
 		this._hoverIndex = new Map();
+		this._hover = false;
 	}
 
 	private _combineOption(
@@ -326,6 +332,7 @@ class PolygonLayer extends Layer {
 				}
 			}
 		);
+
 		pathGroup
 			.selectAll("path")
 			.data(pathData)
@@ -408,6 +415,7 @@ class PolygonLayer extends Layer {
 			});
 			if (coordinates.length === 0) return pre;
 			const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
+			const onHover = option?.onHover || this.option.onHover;
 			pre.push({
 				type: "Feature",
 				geometry: {
@@ -433,6 +441,11 @@ class PolygonLayer extends Layer {
 							...selectStyle,
 						},
 						hasHover: !!hoverStyle?.fillColor || this.option.hasHover,
+						onHover: debounce((...e) => {
+							if (this._hover) {
+								onHover(...e);
+							}
+						}, 2000),
 					},
 					ids,
 					originData: cur,
@@ -549,6 +562,7 @@ class PolygonLayer extends Layer {
 				}, 300);
 			})
 			.on("mousemove", (e, d) => {
+				this._hover = true;
 				const { coordinates } = d.geometry;
 				const { hasHover } = d.properties.option;
 				if (hasHover) {
@@ -566,10 +580,12 @@ class PolygonLayer extends Layer {
 
 					if (index > -1) {
 						this._drawHoverLayer();
+						d.properties.option.onHover(d.properties.originData);
 					}
 				}
 			})
 			.on("mouseleave", () => {
+				this._hover = false;
 				this._hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {

@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import Layer, { LayerOptionProps, LayerType } from ".";
 import { InitConfigProps } from "../Map";
+import { debounce } from "lodash";
 
 type polyLineItem = {
 	id: string | number;
@@ -31,6 +32,7 @@ interface PolyLineLayerOptionProps extends LayerOptionProps {
 	onClick?: Function;
 	onRightClick?: Function;
 	onDbClick?: Function;
+	onHover?: Function;
 	selectType?: "link" | "path" | "all";
 }
 
@@ -67,6 +69,7 @@ interface _PolyLineOptionProps {
 	onClick: Function;
 	onRightClick: Function;
 	onDbClick: Function;
+	onHover: Function;
 	selectType: "link" | "path" | "all";
 }
 
@@ -83,6 +86,7 @@ const defaultOption = {
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
+	onHover: () => {},
 	selectType: "link" as "link" | "path" | "all",
 };
 
@@ -102,6 +106,7 @@ class PolyLineLayer extends Layer {
 	private _hoverIndex: Map<number, Set<number>>;
 	private _selectType: "link" | "path" | "all"; // 选中的类型
 	private _allIndex: Map<number, Set<number>>; // 全部的index
+	private _hover: boolean;
 
 	constructor(
 		dataSource: PolyLineDataSourceProps[],
@@ -116,6 +121,7 @@ class PolyLineLayer extends Layer {
 		this._allIndex = new Map();
 		this._hoverIndex = new Map();
 		this.length = dataSource.length;
+		this._hover = false;
 	}
 
 	private _combineOption(
@@ -174,14 +180,22 @@ class PolyLineLayer extends Layer {
 				}
 				this._clickCount++;
 				const originData = d.properties.originData;
-				const index = d.geometry.coordinates.findIndex(i =>
-					this._isPointInLine(
-						i,
+				let index = -1;
+				const coordinates = d.geometry.coordinates;
+				for (let i = 0; i < coordinates.length; i++) {
+					const [inPoint] = this._isPointInLine(
+						coordinates[i],
 						d3.pointer(e, this.container.node())!,
 						this.projection,
 						d.properties.option.style.strokeWidth
-					)
-				);
+					);
+
+					if (inPoint) {
+						index = i;
+						break;
+					}
+				}
+
 				let originalParams: any;
 				if (this._selectType === "all") {
 					originalParams = this.data;
@@ -240,18 +254,29 @@ class PolyLineLayer extends Layer {
 				}, 300);
 			})
 			.on("mousemove", (e, d) => {
-				const { coordinates } = d.geometry;
+				this._hover = true;
 				const hasHover = d.properties.option.hasHover;
 
 				if (hasHover) {
-					const index = coordinates.findIndex(i =>
-						this._isPointInLine(
-							i,
+					let index = -1;
+					let startIndex = -1;
+					let endIndex = -1;
+					const coordinates = d.geometry.coordinates;
+					for (let i = 0; i < coordinates.length; i++) {
+						const [inPoint, start, end] = this._isPointInLine(
+							coordinates[i],
 							d3.pointer(e, this.container.node())!,
 							this.projection,
 							d.properties.option.style.strokeWidth
-						)
-					);
+						);
+
+						if (inPoint) {
+							index = i;
+							startIndex = start;
+							endIndex = end;
+							break;
+						}
+					}
 
 					this._hoverIndex = this.combineIndex(
 						new Map(),
@@ -261,21 +286,35 @@ class PolyLineLayer extends Layer {
 
 					if (index > -1) {
 						this._drawHoverLayer();
+						d.properties.option.onHover({
+							targetData: d.properties.originData,
+							startIndex: startIndex,
+							endIndex: endIndex,
+						});
 					}
 				}
 			})
 			.on("mouseleave", () => {
+				this._hover = false;
 				this._hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {
-				const index = d.geometry.coordinates.findIndex(i =>
-					this._isPointInLine(
-						i,
+				let index = -1;
+				const coordinates = d.geometry.coordinates;
+				for (let i = 0; i < coordinates.length; i++) {
+					const [inPoint] = this._isPointInLine(
+						coordinates[i],
 						d3.pointer(e, this.container.node())!,
 						this.projection,
 						d.properties.option.style.strokeWidth
-					)
-				);
+					);
+
+					if (inPoint) {
+						index = i;
+						break;
+					}
+				}
+
 				let originalParams: any;
 				if (this._selectType === "all") {
 					originalParams = this.data;
@@ -380,6 +419,7 @@ class PolyLineLayer extends Layer {
 					coordinates.push(j.coordinates);
 				});
 				const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
+				const onHover = option?.onHover || this.option.onHover;
 				pre.push({
 					type: "Feature",
 					geometry: {
@@ -405,6 +445,11 @@ class PolyLineLayer extends Layer {
 								...selectStyle,
 							},
 							hasHover: !!hoverStyle?.strokeColor || this.option.hasHover,
+							onHover: debounce((...e) => {
+								if (this._hover) {
+									onHover(...e);
+								}
+							}, 2000),
 						},
 
 						ids,
@@ -553,18 +598,18 @@ class PolyLineLayer extends Layer {
 		point: [number, number],
 		projection: d3.GeoProjection,
 		lineWidth: number
-	): boolean {
-		if (coordinates.length <= 1) return false;
+	): [boolean, number, number] {
+		if (coordinates.length <= 1) return [false, -1, -1];
 		const lineArr = coordinates.map(projection) as [number, number][];
 		for (let i = 1; i < lineArr.length; i++) {
 			if (
 				this._insideInRect(lineArr[i], lineArr[i - 1], point, lineWidth / 2)
 			) {
-				return true;
+				return [true, i - 1, i];
 			}
 		}
 
-		return false;
+		return [false, -1, -1];
 	}
 
 	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {

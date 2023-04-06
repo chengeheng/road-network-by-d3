@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import PointSvg from "../images/point.svg";
 import Layer, { LayerOptionProps, LayerType } from ".";
 import { zooms } from "../constants/config";
+import { debounce } from "lodash";
 
 import { InitConfigProps } from "../Map";
 
@@ -18,6 +19,7 @@ interface PointLayerOption extends LayerOptionProps {
 	onClick?: Function;
 	onRightClick?: Function;
 	onDbClick?: Function;
+	onHover?: Function;
 }
 
 interface PointOption extends PointLayerOption {
@@ -31,6 +33,7 @@ interface PointOption extends PointLayerOption {
 	onClick: Function;
 	onRightClick: Function;
 	onDbClick: Function;
+	onHover: Function;
 }
 
 interface PointDataSourceProps {
@@ -52,6 +55,7 @@ const defaultOption: PointOption = {
 	onClick: () => {},
 	onRightClick: () => {},
 	onDbClick: () => {},
+	onHover: () => {},
 };
 
 class PointLayer extends Layer {
@@ -66,6 +70,7 @@ class PointLayer extends Layer {
 	private filterIds: string[];
 	private _mapConfig!: InitConfigProps;
 	private _imageShrink: boolean;
+	private _hover: boolean;
 
 	constructor(
 		dataSource: PointDataSourceProps[],
@@ -79,6 +84,7 @@ class PointLayer extends Layer {
 		this.clickCount = 0;
 		this.isHided = false;
 		this.filterIds = [];
+		this._hover = false;
 	}
 
 	private _initState() {
@@ -171,11 +177,18 @@ class PointLayer extends Layer {
 					});
 				}
 			})
+			.on("mousemove", (e, d) => {
+				if (d.option.onHover) {
+					d.option.onHover(d._originData);
+				}
+			})
 			.on("mouseover", (e, d) => {
+				this._hover = true;
 				const image = d3.select(e.target);
 				image.attr("filter", `url(#${id})`);
 			})
 			.on("mouseout", (e, d) => {
+				this._hover = false;
 				const image = d3.select(e.target);
 				image.attr("filter", `none`);
 			});
@@ -325,9 +338,21 @@ class PointLayer extends Layer {
 				...i,
 				coordinate: coordinate,
 				icon: i.icon ?? i.option?.icon ?? this.option.icon,
-				option: { ...option, width, height, offset, fontSize },
+				option: {
+					...option,
+					width,
+					height,
+					offset,
+					fontSize,
+					onHover: debounce(e => {
+						if (this._hover) {
+							option.onHover(e);
+						}
+					}, 2000),
+				},
 				imageCenter,
 				imageLeftTop,
+				_originData: i,
 			};
 		});
 	}

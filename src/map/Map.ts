@@ -118,7 +118,7 @@ class Map {
 			})
 			.on("zoom", e => {
 				this._mapContainer.attr("transform", e.transform);
-				if (this._lastLevel !== this._level) {
+				if (e?.sourceEvent?.type === "wheel") {
 					this._updateMapConfig();
 				}
 			});

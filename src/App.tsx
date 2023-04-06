@@ -83,8 +83,9 @@ const oldPointsData: PointDataSourceProps[] = [
 	},
 	{
 		id: 2,
-		name: "世界茶饮",
-		coordinate: [121.315422, 31.221684],
+		name: "朋联国际购物中心",
+		coordinate: [121.23744, 31.246965],
+		icon: "https://picnew9.photophoto.cn/20141026/ps-huizhiapptubiaotupian-11487481_1.jpg",
 		option: {
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -92,6 +93,7 @@ const oldPointsData: PointDataSourceProps[] = [
 			},
 			onDbClick: (e: any) => console.log("point double click", e),
 			onRightClick: (e: any) => console.log("point right click", e),
+			onHover: (e: any) => console.log("hover", e),
 		},
 	},
 ];
@@ -101,8 +103,10 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 			{
 				id: 1,
 				coordinates: [
-					[118.39057, 31.342792],
-					[118.390031, 31.342792],
+					[121.243791, 31.248724],
+					[121.240306, 31.248107],
+					[121.236839, 31.247482],
+					[121.231539, 31.246671],
 				],
 			},
 			// {
@@ -125,7 +129,7 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 		option: {
 			style: {
 				strokeColor: "#1176f0",
-				strokeWidth: 1,
+				strokeWidth: 20,
 				// strokeType: StrokeLineType.dotted,
 			},
 			hoverStyle: {
@@ -138,6 +142,9 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 			onClick: (e: any) => {
 				console.log(e);
 			},
+			onHover: (e: any) => {
+				console.log("hover polyline", e);
+			},
 		},
 	},
 ];
@@ -148,14 +155,18 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 			{
 				id: 1,
 				coordinates: [
-					[121.295875, 31.499448],
-					[121.43213, 31.408761],
-					[121.43213, 31.408761],
-					[121.356816, 31.214767],
-					[121.201589, 31.303175],
-					[121.201589, 31.303175],
-					[121.295875, 31.499448],
+					[121.233766, 31.248558],
+					[121.233515, 31.249434],
+					[121.236219, 31.249743],
+					[121.236609, 31.247779],
+					[121.236484, 31.247567],
+					[121.233672, 31.247103],
+					[121.233519, 31.247578],
+					[121.233155, 31.247524],
+					[121.232908, 31.248392],
+					[121.233766, 31.248558],
 				],
+				name: "华新人民公园",
 			},
 			{
 				id: 2,
@@ -179,7 +190,7 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 			style: {
 				strokeColor: "#1176f0",
 				strokeWidth: 0.5,
-				fillColor: "yellow",
+				fillColor: "skyblue",
 			},
 			hoverStyle: {
 				fillColor: "#333333",
@@ -191,6 +202,9 @@ const oldPolygonsData: PolygonDataSourceProps[] = [
 			selectable: true,
 			onClick: (e: any) => {
 				console.log(e);
+			},
+			onHover: (e: any) => {
+				console.log("hover polygon", e);
 			},
 		},
 	},
@@ -321,11 +335,11 @@ function App() {
 	useEffect(() => {
 		const map = new Map("container", {
 			// center: [118.39057, 31.342792],
-			center: [121.315422, 31.221684],
+			center: [121.23744, 31.246965],
 			level: 10,
 			onClick: (...e) => console.log("click map", e),
 		});
-		const pointlayer = new PointLayer(oldPointsData);
+		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#e3e3e3" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData);
 		const labellayer = new LabelLayer(oldLabelData);
