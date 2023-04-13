@@ -125,26 +125,13 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 			// },
 		],
 		option: {
-			style: {
-				strokeColor: "#1176f0",
-				strokeWidth: 20,
-				// strokeType: StrokeLineType.dotted,
-			},
+			selectable: false,
 			hoverStyle: {
-				strokeColor: "#333333",
+				strokeColor: "black",
 			},
-			selectStyle: {
-				strokeColor: "red",
-			},
-			selectable: true,
-			onClick: (e: any) => {
-				console.log(e);
-			},
-			onHover: (e: any) => {
-				console.log("hover polyline", e);
-			},
-			onLeave: (e: any) => {
-				console.log("leave polyline", e);
+			onHover: e => console.log("line hover", e),
+			onLeave: e => {
+				console.log("polyline leave");
 			},
 		},
 	},
@@ -539,6 +526,18 @@ function App() {
 			},
 		},
 	];
+
+	useEffect(() => {
+		const id = setInterval(() => {
+			if (polyLineLayer) {
+				console.log("polyline update");
+				polyLineLayer.updateData(oldPolyLinesData);
+			}
+		}, 5000);
+		return () => {
+			clearInterval(id);
+		};
+	}, [polyLineLayer]);
 
 	return (
 		<div className="App" id="container">

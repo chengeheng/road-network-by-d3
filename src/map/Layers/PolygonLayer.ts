@@ -163,10 +163,7 @@ class PolygonLayer extends Layer {
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 	private _hover: boolean;
 
-	constructor(
-		dataSource: PolygonDataSourceProps[],
-		option?: PolygonLayerOptionProps
-	) {
+	constructor(dataSource: PolygonDataSourceProps[], option?: PolygonLayerOptionProps) {
 		super(LayerType.PolygonLayer, option);
 		this.data = dataSource;
 		this.option = this._combineOption(option);
@@ -180,9 +177,7 @@ class PolygonLayer extends Layer {
 		this._hover = false;
 	}
 
-	private _combineOption(
-		option: PolygonLayerOptionProps = defaultOption
-	): _PolygonOptionProps {
+	private _combineOption(option: PolygonLayerOptionProps = defaultOption): _PolygonOptionProps {
 		const { style = {}, hoverStyle = {}, selectStyle = {}, ...rest } = option;
 		return {
 			...defaultOption,
@@ -264,16 +259,13 @@ class PolygonLayer extends Layer {
 		this._selectLayer.selectAll("*").remove();
 		const pathGroup = this._selectLayer.append("g");
 		const nameGroup = this._selectLayer.append("g");
-		const [pathData, nameData] = this._formatData(
-			this.data,
-			(e, idx, index) => {
-				if (!this.selectIndex.get(idx)) {
-					return false;
-				} else {
-					return this.selectIndex.get(idx)!.has(index);
-				}
+		const [pathData, nameData] = this._formatData(this.data, (e, idx, index) => {
+			if (!this.selectIndex.get(idx)) {
+				return false;
+			} else {
+				return this.selectIndex.get(idx)!.has(index);
 			}
-		);
+		});
 
 		pathGroup
 			.selectAll("path")
@@ -283,16 +275,11 @@ class PolygonLayer extends Layer {
 			.attr("d", this.path)
 			.attr("stroke", l => l.properties.option.selectStyle.strokeColor)
 			.attr("stroke-width", l => l.properties.option.selectStyle.strokeWidth)
-			.attr(
-				"stroke-opacity",
-				d => d.properties.option.selectStyle.strokeOpacity
-			)
+			.attr("stroke-opacity", d => d.properties.option.selectStyle.strokeOpacity)
 			.attr("fill", l => l.properties.option.selectStyle.fillColor)
 			.attr("fill-opacity", d => d.properties.option.selectStyle.fillOpacity)
 			.attr("stroke-dasharray", l => {
-				if (
-					l.properties.option.selectStyle.strokeType === StrokeLineType.dotted
-				) {
+				if (l.properties.option.selectStyle.strokeType === StrokeLineType.dotted) {
 					return l.properties.option.selectStyle.strokeDashArray;
 				} else {
 					return null;
@@ -311,10 +298,7 @@ class PolygonLayer extends Layer {
 			.attr("font-weight", d => d.fontWeight)
 			.style("text-anchor", "middle")
 			.attr("dominant-baseline", "central")
-			.attr(
-				"transform",
-				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
-			)
+			.attr("transform", d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`)
 			.text(d => d.name);
 	}
 
@@ -322,16 +306,13 @@ class PolygonLayer extends Layer {
 		this._hoverLayer.selectAll("*").remove();
 		const pathGroup = this._hoverLayer.append("g");
 		const nameGroup = this._hoverLayer.append("g");
-		const [pathData, nameData] = this._formatData(
-			this.data,
-			(e, idx, index) => {
-				if (!this._hoverIndex.get(idx)) {
-					return false;
-				} else {
-					return this._hoverIndex.get(idx)!.has(index);
-				}
+		const [pathData, nameData] = this._formatData(this.data, (e, idx, index) => {
+			if (!this._hoverIndex.get(idx)) {
+				return false;
+			} else {
+				return this._hoverIndex.get(idx)!.has(index);
 			}
-		);
+		});
 
 		pathGroup
 			.selectAll("path")
@@ -345,9 +326,7 @@ class PolygonLayer extends Layer {
 			.attr("fill", d => d.properties.option.hoverStyle.fillColor)
 			.attr("fill-opacity", d => d.properties.option.hoverStyle.fillOpacity)
 			.attr("stroke-dasharray", l => {
-				if (
-					l.properties.option.hoverStyle.strokeType === StrokeLineType.dotted
-				) {
+				if (l.properties.option.hoverStyle.strokeType === StrokeLineType.dotted) {
 					return l.properties.option.hoverStyle.strokeDashArray;
 				} else {
 					return null;
@@ -366,10 +345,7 @@ class PolygonLayer extends Layer {
 			.attr("font-weight", d => d.fontWeight)
 			.style("text-anchor", "middle")
 			.attr("dominant-baseline", "central")
-			.attr(
-				"transform",
-				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
-			)
+			.attr("transform", d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`)
 			.text(d => d.name);
 	}
 
@@ -397,9 +373,7 @@ class PolygonLayer extends Layer {
 						...j.nameStyle,
 					};
 
-					const coordinate = this.projection(
-						d3.polygonCentroid(j.coordinates)
-					)!;
+					const coordinate = this.projection(d3.polygonCentroid(j.coordinates))!;
 					nameData.push({
 						name: j.name,
 						fontSize: nameStyle.fontSize,
@@ -445,7 +419,7 @@ class PolygonLayer extends Layer {
 							if (this._hover) {
 								onHover(...e);
 							}
-						}, 2000),
+						}, 500),
 					},
 					ids,
 					originData: cur,
@@ -459,21 +433,16 @@ class PolygonLayer extends Layer {
 	}
 
 	protected _draw() {
-		const [pathData, nameData] = this._formatData(
-			this.data,
-			(e, outerIndex, innerIndex) => {
-				if (this._allIndex.has(outerIndex)) {
-					this._allIndex.get(outerIndex)?.add(innerIndex);
-				} else {
-					this._allIndex.set(outerIndex, new Set<number>([innerIndex]));
-				}
-				return true;
+		const [pathData, nameData] = this._formatData(this.data, (e, outerIndex, innerIndex) => {
+			if (this._allIndex.has(outerIndex)) {
+				this._allIndex.get(outerIndex)?.add(innerIndex);
+			} else {
+				this._allIndex.set(outerIndex, new Set<number>([innerIndex]));
 			}
-		);
+			return true;
+		});
 		const pathGroup = this._baseLayer.append("g");
-		const nameGroup = this._baseLayer
-			.append("g")
-			.style("pointer-events", "none");
+		const nameGroup = this._baseLayer.append("g").style("pointer-events", "none");
 
 		pathGroup
 			.selectAll("path")
@@ -502,9 +471,7 @@ class PolygonLayer extends Layer {
 				const originData = d.properties.originData;
 
 				const targetCoord = this.projection.invert!(d3.pointer(e, this.map));
-				const index = coordinates.findIndex(i =>
-					d3.polygonContains(i, targetCoord!)
-				);
+				const index = coordinates.findIndex(i => d3.polygonContains(i, targetCoord!));
 				let originalParams: any;
 				if (this._selectType === "all") {
 					originalParams = this.data;
@@ -520,11 +487,7 @@ class PolygonLayer extends Layer {
 						const clickFn = d.properties.option.onClick;
 						const selectable = d.properties.option.selectable;
 						if (selectable) {
-							this.selectIndex = this._combineIndex(
-								this.selectIndex,
-								d.properties.index,
-								index
-							);
+							this.selectIndex = this._combineIndex(this.selectIndex, d.properties.index, index);
 							this._drawSelectLayer();
 						}
 						if (clickFn) {
@@ -566,17 +529,11 @@ class PolygonLayer extends Layer {
 				const { coordinates } = d.geometry;
 				const { hasHover } = d.properties.option;
 				if (hasHover) {
-					const targetCoord = this.projection.invert!(
-						d3.pointer(e, this.container.node())
-					);
+					const targetCoord = this.projection.invert!(d3.pointer(e, this.container.node()));
 					const index = coordinates.findIndex(i => {
 						return d3.polygonContains(i, targetCoord!);
 					});
-					this._hoverIndex = this._combineIndex(
-						new Map(),
-						d.properties.index,
-						index
-					);
+					this._hoverIndex = this._combineIndex(new Map(), d.properties.index, index);
 
 					if (index > -1) {
 						this._drawHoverLayer();
@@ -589,12 +546,8 @@ class PolygonLayer extends Layer {
 				this._hoverLayer.selectAll("*").remove();
 			})
 			.on("contextmenu", (e, d) => {
-				const targetCoord = this.projection.invert!(
-					d3.pointer(e, this.container.node())
-				);
-				const index = d.geometry.coordinates.findIndex(i =>
-					d3.polygonContains(i, targetCoord!)
-				);
+				const targetCoord = this.projection.invert!(d3.pointer(e, this.container.node()));
+				const index = d.geometry.coordinates.findIndex(i => d3.polygonContains(i, targetCoord!));
 
 				let originalParams: any;
 				if (this._selectType === "all") {
@@ -632,10 +585,7 @@ class PolygonLayer extends Layer {
 			.attr("fill", d => d.color)
 			.style("text-anchor", "middle")
 			.attr("dominant-baseline", "central")
-			.attr(
-				"transform",
-				d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`
-			)
+			.attr("transform", d => `rotate(${d.rotate}, ${d.coordinate[0]}, ${d.coordinate[1]})`)
 			.attr("font-weight", d => d.fontWeight)
 
 			.text(d => d.name);
@@ -644,19 +594,12 @@ class PolygonLayer extends Layer {
 	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {
 		super.init(g, projection, option);
 		this.path = d3.geoPath<any, any>().projection(projection);
-		this.container = d3
-			.select(g)
-			.append("g")
-			.attr("id", `polygon-layer-${this.makeRandomId()}`);
+		this.container = d3.select(g).append("g").attr("id", `polygon-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
 		this._baseLayer = this.container.append("g");
-		this._selectLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
-		this._hoverLayer = this.container
-			.append("g")
-			.style("pointer-events", "none");
+		this._selectLayer = this.container.append("g").style("pointer-events", "none");
+		this._hoverLayer = this.container.append("g").style("pointer-events", "none");
 
 		this._draw();
 	}

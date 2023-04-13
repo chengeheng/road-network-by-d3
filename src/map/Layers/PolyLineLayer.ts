@@ -27,7 +27,7 @@ interface PolyLineLayerOptionProps extends LayerOptionProps {
 	selectStyle?: StyleProps;
 	hoverStyle?: StyleProps;
 
-	selectable: boolean;
+	selectable?: boolean;
 	stopPropagation?: boolean;
 	onClick?: Function;
 	onRightClick?: Function;
@@ -387,7 +387,7 @@ class PolyLineLayer extends Layer {
 							if (this._hover) {
 								onHover(...e);
 							}
-						}, 2000),
+						}, 500),
 					},
 
 					ids,
