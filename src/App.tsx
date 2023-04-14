@@ -15,6 +15,8 @@ import {
 	LabelDataSourceProps,
 } from "./map";
 
+import Toast from "./toast";
+
 const focusCoords: [number, number][] = [
 	[118.391213, 31.343501],
 	[118.39137, 31.343408],
@@ -129,9 +131,19 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 			hoverStyle: {
 				strokeColor: "black",
 			},
-			onHover: e => console.log("line hover", e),
+			onHover: e => {
+				const { PointerEvent } = e;
+				console.log(PointerEvent);
+				Toast.show("测试", {
+					duration: 100000,
+					left: PointerEvent.x + "px",
+					top: PointerEvent.y + "px",
+					key: 1,
+				});
+			},
 			onLeave: e => {
 				console.log("polyline leave");
+				// Toast.close();
 			},
 		},
 	},
