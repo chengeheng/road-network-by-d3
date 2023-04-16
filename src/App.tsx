@@ -531,25 +531,32 @@ function App() {
 			},
 		},
 		{
+			label: "调用画面工具",
+			onClick: () => {
+				if (!map) return;
+				map.paintPolygon().then(res => console.log("paint polygon:", res));
+			},
+		},
+		{
 			label: "调用画线工具",
 			onClick: () => {
 				if (!map) return;
-				map.paintPolygon();
+				map.paintPolyline().then(res => console.log("paint polyline:", res));
 			},
 		},
 	];
 
-	useEffect(() => {
-		const id = setInterval(() => {
-			if (polyLineLayer) {
-				console.log("polyline update");
-				polyLineLayer.updateData(oldPolyLinesData);
-			}
-		}, 5000);
-		return () => {
-			clearInterval(id);
-		};
-	}, [polyLineLayer]);
+	// useEffect(() => {
+	// 	const id = setInterval(() => {
+	// 		if (polyLineLayer) {
+	// 			console.log("polyline update");
+	// 			polyLineLayer.updateData(oldPolyLinesData);
+	// 		}
+	// 	}, 5000);
+	// 	return () => {
+	// 		clearInterval(id);
+	// 	};
+	// }, [polyLineLayer]);
 
 	return (
 		<div className="App" id="container">

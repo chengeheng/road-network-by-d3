@@ -2,6 +2,8 @@ import * as d3 from "d3";
 
 import { zooms } from "./constants/config";
 import Layer from "./Layers";
+import EditPolygon from "./Elements/EditPolygon";
+import EditPolyline from "./Elements/EditPolyline";
 
 interface MapOption {
 	center?: [number, number];
@@ -25,19 +27,20 @@ class Map {
 	id: string;
 	width: number;
 	height: number;
-	private options: MapOption;
+	projection: d3.GeoProjection;
+	options: MapOption;
 
 	private _level: number;
 	private _lastLevel: number;
 	private _layers: Layer[];
-	private _map!: SVGGElement;
-	private _toolMap!: SVGGElement;
 	private _container: HTMLElement;
-	private _zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
+
 	private _svg!: d3.Selection<SVGSVGElement, unknown, null, undefined>;
 	private _mapContainer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _layerContainer!: SVGGElement;
+	private _toolContainer!: SVGGElement;
 
-	projection: d3.GeoProjection;
+	private _zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
 
 	constructor(id: string, options: MapOption = defaultOptions) {
 		// 初始化值
@@ -93,8 +96,8 @@ class Map {
 			this._svg.attr("class", this.options.class);
 		}
 		this._mapContainer = this._svg.append("g");
-		this._map = this._mapContainer.append("g").attr("id", "layers").node()!;
-		this._toolMap = this._mapContainer
+		this._layerContainer = this._mapContainer.append("g").attr("id", "layers").node()!;
+		this._toolContainer = this._mapContainer
 			.append("g")
 			.attr("id", "tools")
 			.style("pointer-events", "none")
@@ -143,10 +146,7 @@ class Map {
 				const projection = this.projection;
 				// console.log(d3.pointer(e, g.node()));
 				if (this.options.onClick) {
-					this.options.onClick(
-						e,
-						projection.invert!(d3.pointer(e, this._mapContainer.node()))
-					);
+					this.options.onClick(e, projection.invert!(d3.pointer(e, this._mapContainer.node())));
 				}
 			})
 			.on("dblclick.zoom", null);
@@ -161,7 +161,7 @@ class Map {
 	 */
 	addLayer(layer: Layer) {
 		this._layers.push(layer);
-		layer.init(this._map, this.projection, { level: this._level });
+		layer.init(this._layerContainer, this.projection, { level: this._level });
 	}
 	/**
 	 * 删除图层
@@ -236,14 +236,8 @@ class Map {
 		}
 		const min: number[] = [];
 		const max: number[] = [];
-		[min[0], max[0]] = d3.extent(projectionCoords, d => d[0]) as [
-			number,
-			number
-		];
-		[min[1], max[1]] = d3.extent(projectionCoords, d => d[1]) as [
-			number,
-			number
-		];
+		[min[0], max[0]] = d3.extent(projectionCoords, d => d[0]) as [number, number];
+		[min[1], max[1]] = d3.extent(projectionCoords, d => d[1]) as [number, number];
 
 		const xScale = (max[0] - min[0]) / this.width;
 		const yScale = (max[1] - min[1]) / this.height;
@@ -252,8 +246,7 @@ class Map {
 			(max[1] + min[1]) / 2,
 		]) as [number, number];
 
-		const scale =
-			Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
+		const scale = Math.max(xScale, yScale) === 0 ? 5 : 1 / Math.max(xScale, yScale);
 
 		const diffs = zooms.map(i => Math.abs(scale - i));
 		const minDiff = Math.min(...diffs);
@@ -284,15 +277,58 @@ class Map {
 		);
 	}
 
-	// TODO 添加绘制面的工具
+	// 添加绘制面的工具
 	paintPolygon() {
-		d3.select(this._map).style("pointer-events", "none");
+		d3.select(this._layerContainer).style("pointer-events", "none");
+		d3.select(this._toolContainer).style("pointer-events", "inherit");
+		this._removeClickFn();
 		return new Promise((resolve, reject) => {
-			console.log(this);
+			const polygon = new EditPolygon({
+				container: d3.select(this._toolContainer),
+				projection: this.projection,
+				map: this._toolContainer,
+			});
+			this._svg
+				.on("click", e => {
+					polygon.addData(
+						this.projection.invert!(d3.pointer(e, this._mapContainer.node())) as [number, number]
+					);
+				})
+				.on("contextmenu", () => {
+					resolve(polygon.printCoordinates());
+				});
+		}).finally(() => {
+			d3.select(this._layerContainer).style("pointer-events", "inherit");
+			d3.select(this._toolContainer).style("pointer-event", "none");
+			this._addClickFn();
 		});
-		// d3.select(this._toolMap).on("click", e => {
-		// 	console.log(e);
-		// });
+	}
+
+	// 添加绘制线的工具
+	paintPolyline() {
+		d3.select(this._layerContainer).style("pointer-events", "none");
+		d3.select(this._toolContainer).style("pointer-events", "inherit");
+		this._removeClickFn();
+		return new Promise((resolve, reject) => {
+			const polygon = new EditPolyline({
+				container: d3.select(this._toolContainer),
+				projection: this.projection,
+				map: this._toolContainer,
+			});
+			this._svg
+				.on("click", e => {
+					polygon.addData(
+						this.projection.invert!(d3.pointer(e, this._mapContainer.node())) as [number, number]
+					);
+				})
+				.on("contextmenu", () => {
+					resolve(polygon.printCoordinates());
+				});
+		}).finally(() => {
+			d3.select(this._layerContainer).style("pointer-events", "inherit");
+			d3.select(this._toolContainer).style("pointer-event", "none");
+			this._addClickFn();
+		});
 	}
 }
 

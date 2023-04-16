@@ -160,8 +160,8 @@ class PolyLineLayer extends Layer {
 		};
 	}
 
-	protected _draw() {
-		this._baseLayer
+	protected _draw(): d3.Selection<SVGPathElement, _DrawParameterProps, SVGGElement, unknown> {
+		return this._baseLayer
 			.selectAll("path")
 			.data(
 				this._formatData(this.data, (e, outerIndex, innerIndex) => {
