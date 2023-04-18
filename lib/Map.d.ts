@@ -14,17 +14,17 @@ declare class Map {
     id: string;
     width: number;
     height: number;
-    private options;
+    projection: d3.GeoProjection;
+    options: MapOption;
     private _level;
     private _lastLevel;
     private _layers;
-    private _map;
-    private _toolMap;
     private _container;
-    private _zoom;
     private _svg;
     private _mapContainer;
-    projection: d3.GeoProjection;
+    private _layerContainer;
+    private _toolContainer;
+    private _zoom;
     constructor(id: string, options?: MapOption);
     private _init;
     private _updateMapConfig;
@@ -68,5 +68,6 @@ declare class Map {
      */
     setLevel(level: number): void;
     paintPolygon(): Promise<unknown>;
+    paintPolyline(): Promise<unknown>;
 }
 export default Map;

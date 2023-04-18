@@ -106,7 +106,7 @@ class Map {
 		// 添加缩放事件
 		this._zoom = d3
 			.zoom<SVGSVGElement, unknown>()
-			.scaleExtent([zooms[19], zooms[0]])
+			.scaleExtent([zooms[17], zooms[0]])
 			.wheelDelta(event => {
 				this._lastLevel = this._level;
 				if (event.deltaY < 0) {
@@ -114,7 +114,7 @@ class Map {
 					this._level--;
 					return Math.log2(zooms[this._level - 1] / zooms[this._level]);
 				} else {
-					if (this._level === 20) return Math.log2(1);
+					if (this._level === 18) return Math.log2(1);
 					this._level++;
 					return Math.log2(zooms[this._level - 1] / zooms[this._level - 2]);
 				}
@@ -203,25 +203,27 @@ class Map {
 	 * @param coord 点位bd09坐标
 	 * @param zoomLevel 地图缩放层级[1-20]
 	 */
-	moveTo(coord: [number, number], zoomLevel: number = 2) {
-		this._lastLevel = this._level;
-		if (zoomLevel < 1) {
-			this._level = 1;
-		} else if (zoomLevel > 20) {
-			this._level = 20;
-		} else {
-			this._level = Math.floor(zoomLevel);
-		}
+	moveTo(coord: [number, number], zoomLevel?: number) {
+		if (zoomLevel !== undefined) {
+			this._lastLevel = this._level;
+			if (zoomLevel < 1) {
+				this._level = 1;
+			} else if (zoomLevel > 18) {
+				this._level = 18;
+			} else {
+				this._level = Math.floor(zoomLevel);
+			}
 
+			if (this._lastLevel !== this._level) {
+				this._updateMapConfig();
+			}
+		}
 		const realCoord = this.projection(coord)!;
 		const t = d3.zoomIdentity.scale(zooms[this._level - 1]).apply(realCoord);
 		const m = d3.zoomIdentity
 			.translate(-(t[0] - this.width / 2), -(t[1] - this.height / 2))
 			.scale(zooms[this._level - 1]);
 		this._svg.transition().duration(1000).call(this._zoom.transform, m);
-		if (this._lastLevel !== this._level) {
-			this._updateMapConfig();
-		}
 	}
 
 	/**
@@ -252,7 +254,7 @@ class Map {
 		const minDiff = Math.min(...diffs);
 		const index = diffs.indexOf(minDiff);
 
-		if (index < 19) {
+		if (index < 17) {
 			this.moveTo(middle, index + 2);
 		} else {
 			this.moveTo(middle, index + 1);
@@ -264,8 +266,8 @@ class Map {
 	 */
 	setLevel(level: number) {
 		this._lastLevel = this._level;
-		if (level >= 20) {
-			this._level = 20;
+		if (level >= 18) {
+			this._level = 18;
 		} else if (level <= 1) {
 			this._level = 1;
 		} else {

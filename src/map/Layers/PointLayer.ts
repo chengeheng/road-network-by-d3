@@ -72,15 +72,11 @@ class PointLayer extends Layer {
 	private _imageShrink: boolean;
 	private _hover: boolean;
 
-	constructor(
-		dataSource: PointDataSourceProps[],
-		option: PointLayerOption = defaultOption
-	) {
+	constructor(dataSource: PointDataSourceProps[], option: PointLayerOption = defaultOption) {
 		super(LayerType.PointLayer, option);
 		this.data = dataSource;
 		this.option = { ...defaultOption, ...option };
-		this._imageShrink =
-			option.imageShrink === undefined ? true : option.imageShrink;
+		this._imageShrink = option.imageShrink === undefined ? true : option.imageShrink;
 		this.clickCount = 0;
 		this.isHided = false;
 		this.filterIds = [];
@@ -94,11 +90,7 @@ class PointLayer extends Layer {
 	}
 
 	private _drawWithHoverColor() {
-		const g = this.baseLayer
-			.selectAll("g")
-			.data(this._formatData(this.data))
-			.enter()
-			.append("g");
+		const g = this.baseLayer.selectAll("g").data(this._formatData(this.data)).enter().append("g");
 		const hoverColor = this.option.hoverColor!;
 		const filterMatrix = this._makeFilterMatrix(hoverColor);
 		const id = this.makeRandomId();
@@ -120,8 +112,7 @@ class PointLayer extends Layer {
 			.attr("height", d => d.option.height)
 			.attr(
 				"transform",
-				d =>
-					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]})`
+				d => `rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]})`
 			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
@@ -203,21 +194,14 @@ class PointLayer extends Layer {
 			.append("text")
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
-			.attr(
-				"transform",
-				d => `translate(${0},${d.option.offset[1] - d.option.height})`
-			)
+			.attr("transform", d => `translate(${0},${d.option.offset[1] - d.option.height})`)
 			.style("text-anchor", "middle")
 			.attr("font-size", d => d.option.fontSize)
 			.text(d => d.name!);
 	}
 
 	private _drawWithOutHoverColor() {
-		const g = this.baseLayer
-			.selectAll("g")
-			.data(this._formatData(this.data))
-			.enter()
-			.append("g");
+		const g = this.baseLayer.selectAll("g").data(this._formatData(this.data)).enter().append("g");
 
 		g.append("image")
 			.attr("xlink:href", d => d.icon)
@@ -227,8 +211,7 @@ class PointLayer extends Layer {
 			.attr("height", d => d.option.height)
 			.attr(
 				"transform",
-				d =>
-					`rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]})`
+				d => `rotate(${d.option.rotate}, ${d.imageCenter[0]}, ${d.imageCenter[1]})`
 			)
 			.on("click", (e, d) => {
 				if (d.option.stopPropagation) {
@@ -302,10 +285,7 @@ class PointLayer extends Layer {
 			.attr("x", d => d.coordinate[0])
 			.attr("y", d => d.coordinate[1])
 			.style("text-anchor", "middle")
-			.attr(
-				"transform",
-				d => `translate(${0},${d.option.offset[1] - d.option.height})`
-			)
+			.attr("transform", d => `translate(${0},${d.option.offset[1] - d.option.height})`)
 			.attr("font-size", d => d.option.fontSize)
 			.text(d => d.name!);
 	}
@@ -318,7 +298,7 @@ class PointLayer extends Layer {
 			let width = option.width;
 			let height = option.height;
 			let fontSize = 12;
-			if (this._imageShrink) {
+			if (this._imageShrink === false) {
 				const scale = 1 / zooms[this._mapConfig.level - 1];
 				width = option.width * scale;
 				height = option.height * scale;
@@ -376,9 +356,7 @@ class PointLayer extends Layer {
 			if (testColor.length === 4) {
 				newColor = "#";
 				for (let i = 1; i < 4; i++) {
-					newColor += testColor
-						.slice(i, i + 1)
-						.concat(testColor.slice(i, i + 1));
+					newColor += testColor.slice(i, i + 1).concat(testColor.slice(i, i + 1));
 				}
 			} else {
 				newColor = testColor;
@@ -404,10 +382,7 @@ class PointLayer extends Layer {
 	init(g: SVGGElement, projection: d3.GeoProjection, config: InitConfigProps) {
 		super.init(g, projection, config);
 		this._mapConfig = config;
-		this.container = d3
-			.select(g)
-			.append("g")
-			.attr("id", `point-layer-${this.makeRandomId()}`);
+		this.container = d3.select(g).append("g").attr("id", `point-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
 
 		this.baseLayer = this.container.append("g");
@@ -453,8 +428,10 @@ class PointLayer extends Layer {
 
 	updateMapConfig(config: InitConfigProps) {
 		this._mapConfig = config;
-		this.baseLayer.selectAll("*").remove();
-		this._draw();
+		if (this._imageShrink === false) {
+			this.baseLayer.selectAll("*").remove();
+			this._draw();
+		}
 	}
 }
 

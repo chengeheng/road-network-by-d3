@@ -70,10 +70,10 @@ const oldPointsData: PointDataSourceProps[] = [
 	{
 		id: 1,
 		name: "金宝大酒店",
-		coordinate: [118.39053, 31.343104],
+		coordinate: [121.23769259855258, 31.24692450845705],
 		option: {
 			offset: [0, 18],
-			rotate: 0,
+			rotate: 10,
 			hoverColor: "#333333",
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -89,6 +89,8 @@ const oldPointsData: PointDataSourceProps[] = [
 		coordinate: [121.23744, 31.246965],
 		icon: "https://picnew9.photophoto.cn/20141026/ps-huizhiapptubiaotupian-11487481_1.jpg",
 		option: {
+			offset: [-15, 18],
+			rotate: 90,
 			stopPropagation: true,
 			onClick: (e: any) => {
 				console.log("pointEvent", e);
@@ -127,9 +129,13 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 			// },
 		],
 		option: {
-			selectable: false,
+			selectable: true,
+			style: { strokeWidth: 4 },
 			hoverStyle: {
 				strokeColor: "black",
+			},
+			selectStyle: {
+				strokeColor: "red",
 			},
 			onHover: e => {
 				const { PointerEvent } = e;
@@ -341,7 +347,7 @@ function App() {
 		});
 		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#e3e3e3" });
 		const polylayer = new PolygonLayer(oldPolygonsData);
-		const linelayer = new PolyLineLayer(oldPolyLinesData);
+		const linelayer = new PolyLineLayer(oldPolyLinesData, { shrink: false });
 		const labellayer = new LabelLayer(oldLabelData);
 		map.addLayer(polylayer);
 		map.addLayer(linelayer);
@@ -387,14 +393,14 @@ function App() {
 			label: "聚焦点",
 			onClick: () => {
 				if (!map) return;
-				map.moveTo([121.313697, 31.510286]);
+				map.moveTo([121.23744, 31.246965]);
 			},
 		},
 		{
 			label: "聚焦点2",
 			onClick: () => {
 				if (!map) return;
-				map.moveTo([121.315422, 31.221684]);
+				map.moveTo([121.23769259855258, 31.24692450845705]);
 			},
 		},
 		{

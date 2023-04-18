@@ -21,12 +21,14 @@ interface PolyLineLayerOptionProps extends LayerOptionProps {
     style?: StyleProps;
     selectStyle?: StyleProps;
     hoverStyle?: StyleProps;
-    selectable: boolean;
+    shrink?: boolean;
+    selectable?: boolean;
     stopPropagation?: boolean;
     onClick?: Function;
     onRightClick?: Function;
     onDbClick?: Function;
     onHover?: Function;
+    onLeave?: Function;
     selectType?: "link" | "path" | "all";
 }
 interface PolyLineDataSourceProps {
@@ -55,6 +57,7 @@ interface _PolyLineOptionProps {
         strokeType: StrokeLineType;
         strokeDashArray: number[];
     };
+    shrink: boolean;
     hasHover: boolean;
     selectable: boolean;
     stopPropagation: boolean;
@@ -62,7 +65,21 @@ interface _PolyLineOptionProps {
     onRightClick: Function;
     onDbClick: Function;
     onHover: Function;
+    onLeave: Function;
     selectType: "link" | "path" | "all";
+}
+interface _DrawParameterProps {
+    type: string;
+    geometry: {
+        type: string;
+        coordinates: [number, number][][];
+    };
+    properties: {
+        option: _PolyLineOptionProps;
+        ids: (string | number)[];
+        originData: PolyLineDataSourceProps;
+        [propName: string]: any;
+    };
 }
 declare class PolyLineLayer extends Layer {
     data: PolyLineDataSourceProps[];
@@ -72,6 +89,7 @@ declare class PolyLineLayer extends Layer {
     private _baseLayer;
     private _selectLayer;
     private _hoverLayer;
+    private _shrink;
     private _clickCount;
     private _clickTimer;
     private _selectIndex;
@@ -79,9 +97,11 @@ declare class PolyLineLayer extends Layer {
     private _selectType;
     private _allIndex;
     private _hover;
+    private _mapConfig;
     constructor(dataSource: PolyLineDataSourceProps[], option?: PolyLineLayerOptionProps);
     private _combineOption;
-    protected _draw(): void;
+    protected _draw(): d3.Selection<SVGPathElement, _DrawParameterProps, SVGGElement, unknown>;
+    private _formatReturnedData;
     private _drawSelectLayer;
     private _drawHoverLayer;
     private _formatData;
@@ -103,6 +123,7 @@ declare class PolyLineLayer extends Layer {
     disableLayerFunc(): void;
     updateData(data: PolyLineDataSourceProps[]): void;
     setSelectType(type: "link" | "path" | "all"): void;
+    updateMapConfig(config: InitConfigProps): void;
 }
 export type { PolyLineDataSourceProps };
 export { PolyLineLayer as default, StrokeLineType };

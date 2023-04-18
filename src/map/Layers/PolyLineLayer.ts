@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import Layer, { LayerOptionProps, LayerType } from ".";
 import { InitConfigProps } from "../Map";
 import { debounce } from "lodash";
+import { zooms } from "../constants/config";
 
 type polyLineItem = {
 	id: string | number;
@@ -27,6 +28,7 @@ interface PolyLineLayerOptionProps extends LayerOptionProps {
 	selectStyle?: StyleProps;
 	hoverStyle?: StyleProps;
 
+	shrink?: boolean;
 	selectable?: boolean;
 	stopPropagation?: boolean;
 	onClick?: Function;
@@ -64,6 +66,7 @@ interface _PolyLineOptionProps {
 		strokeType: StrokeLineType;
 		strokeDashArray: number[];
 	};
+	shrink: boolean;
 	hasHover: boolean;
 	selectable: boolean;
 	stopPropagation: boolean;
@@ -97,6 +100,7 @@ const defaultOption = {
 		strokeType: StrokeLineType.solid,
 		strokeDashArray: [2, 3],
 	},
+	shrink: true,
 	selectable: false,
 	stopPropagation: false,
 	onClick: () => {},
@@ -116,6 +120,7 @@ class PolyLineLayer extends Layer {
 	private _baseLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	private _selectLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	private _hoverLayer!: d3.Selection<SVGGElement, unknown, null, undefined>;
+	private _shrink: boolean;
 
 	private _clickCount: number;
 	private _clickTimer: NodeJS.Timeout | undefined;
@@ -124,6 +129,7 @@ class PolyLineLayer extends Layer {
 	private _selectType: "link" | "path" | "all"; // 选中的类型
 	private _allIndex: Map<number, Set<number>>; // 全部的index
 	private _hover: boolean;
+	private _mapConfig!: InitConfigProps;
 
 	constructor(dataSource: PolyLineDataSourceProps[], option?: PolyLineLayerOptionProps) {
 		super(LayerType.PolygonLayer, option);
@@ -136,24 +142,28 @@ class PolyLineLayer extends Layer {
 		this._hoverIndex = new Map();
 		this.length = dataSource.length;
 		this._hover = false;
+		this._shrink = this.option.shrink === undefined ? true : this.option.shrink;
 	}
 
 	private _combineOption(option: PolyLineLayerOptionProps = defaultOption): _PolyLineOptionProps {
 		const { style = {}, hoverStyle = {}, selectStyle = {}, ...rest } = option;
+		const defaultStyle = {
+			...defaultOption.style,
+			...style,
+		};
 
 		return {
 			...defaultOption,
 			...rest,
 			style: {
-				...defaultOption.style,
-				...style,
+				...defaultStyle,
 			},
 			hoverStyle: {
-				...defaultOption.style,
+				...defaultStyle,
 				...hoverStyle,
 			},
 			selectStyle: {
-				...defaultOption.style,
+				...defaultStyle,
 				...selectStyle,
 			},
 			hasHover: !!hoverStyle.strokeColor,
@@ -358,6 +368,17 @@ class PolyLineLayer extends Layer {
 			});
 			const { style = {}, hoverStyle = {}, selectStyle = {} } = option || {};
 			const onHover = option?.onHover || this.option.onHover;
+			let strokeWidth = style.strokeWidth || this.option.style.strokeWidth;
+			let hoverStrokeWidth =
+				hoverStyle.strokeWidth || style.strokeWidth || this.option.hoverStyle.strokeWidth;
+			let selectStrokeWidth =
+				selectStyle.strokeWidth || style.strokeWidth || this.option.selectStyle.strokeWidth;
+			if (this._shrink === false) {
+				const scale = 1 / zooms[this._mapConfig.level - 1];
+				strokeWidth = strokeWidth * scale;
+				hoverStrokeWidth = hoverStrokeWidth * scale;
+				selectStrokeWidth = selectStrokeWidth * scale;
+			}
 			pre.push({
 				type: "Feature",
 				geometry: {
@@ -371,16 +392,19 @@ class PolyLineLayer extends Layer {
 						style: {
 							...this.option.style,
 							...style,
+							strokeWidth: strokeWidth,
 						},
 						hoverStyle: {
 							...this.option.hoverStyle,
 							...style,
 							...hoverStyle,
+							strokeWidth: hoverStrokeWidth,
 						},
 						selectStyle: {
 							...this.option.selectStyle,
 							...style,
 							...selectStyle,
+							strokeWidth: selectStrokeWidth,
 						},
 						hasHover: !!hoverStyle?.strokeColor || this.option.hasHover,
 						onHover: debounce((...e) => {
@@ -516,6 +540,7 @@ class PolyLineLayer extends Layer {
 
 	init(g: SVGGElement, projection: d3.GeoProjection, option: InitConfigProps) {
 		super.init(g, projection, option);
+		this._mapConfig = option;
 		this.path = d3.geoPath<any, any>().projection(projection);
 		this.container = d3.select(g).append("g").attr("id", `polyline-layer-${this.makeRandomId()}`);
 		this.container.selectAll("g").remove();
@@ -564,6 +589,17 @@ class PolyLineLayer extends Layer {
 
 	setSelectType(type: "link" | "path" | "all"): void {
 		this._selectType = type;
+	}
+
+	updateMapConfig(config: InitConfigProps) {
+		this._mapConfig = config;
+		if (this._shrink === false) {
+			this._baseLayer.selectAll("path").remove();
+			this._hoverLayer.selectAll("path").remove();
+			this._hoverIndex = new Map();
+			this._draw();
+			this._drawSelectLayer();
+		}
 	}
 }
 
