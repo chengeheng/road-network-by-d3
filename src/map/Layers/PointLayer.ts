@@ -336,19 +336,23 @@ class PointLayer extends Layer {
 			let width = option.width;
 			let height = option.height;
 			let fontSize = 12;
+			const useTinyIcon = i.option?.useTinyIcon ?? option.useTinyIcon;
 			let icon = i.icon ?? i.option?.icon ?? this.option.icon;
+			if (useTinyIcon && this._mapConfig.level > 6) {
+				icon = i.option?.tinyIcon ?? option.tinyIcon;
+				width = option.tinyIconStyle.width ?? this.option.tinyIconStyle.width;
+				height = option.tinyIconStyle.height ?? this.option.tinyIconStyle.height;
+				offset = option.tinyIconStyle.offset ?? this.option.tinyIconStyle.offset;
+				// rotate = rotate - 143;
+			}
 			if (this._imageShrink === false) {
 				const scale = 1 / zooms[this._mapConfig.level - 1];
-				width = option.width * scale;
-				height = option.height * scale;
+				width = width * scale;
+				height = height * scale;
 				offset = [offset[0] * scale, offset[1] * scale];
 				fontSize = fontSize * scale;
 			}
-			const useTinyIcon = i.option?.useTinyIcon ?? option.useTinyIcon;
-			if (useTinyIcon && this._mapConfig.level > 6) {
-				icon = i.option?.tinyIcon ?? option.tinyIcon;
-				// rotate = rotate - 143;
-			}
+
 			const imageCenter: [number, number] = [
 				coordinate[0] + offset[0],
 				coordinate[1] + offset[1] - height / 2,

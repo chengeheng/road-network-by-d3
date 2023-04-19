@@ -22,7 +22,6 @@ const defaultOptions = {
 export interface InitConfigProps {
 	level: number;
 }
-
 class Map {
 	id: string;
 	width: number;
@@ -332,6 +331,8 @@ class Map {
 			this._addClickFn();
 		});
 	}
+
+	// addModal() {}
 }
 
 export default Map;

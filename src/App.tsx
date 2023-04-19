@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+// import ReactDOM from "react-dom";
 import { useEffect } from "react";
+
 import "./App.css";
 
 import Map from "./map";
@@ -76,6 +78,10 @@ const oldPointsData: PointDataSourceProps[] = [
 			rotate: 10,
 			useTinyIcon: true,
 			hoverColor: "#333333",
+			tinyIconStyle: {
+				width: 15,
+				height: 15,
+			},
 			stopPropagation: true,
 			onClick: (e: any) => {
 				console.log("pointEvent", e);
@@ -140,7 +146,6 @@ const oldPolyLinesData: PolyLineDataSourceProps[] = [
 			},
 			onHover: e => {
 				const { PointerEvent } = e;
-				console.log(PointerEvent);
 				Toast.show("测试", {
 					duration: 100000,
 					left: PointerEvent.x + "px",
@@ -564,6 +569,7 @@ function App() {
 	// 		clearInterval(id);
 	// 	};
 	// }, [polyLineLayer]);
+	// useEffect(() => {}, []);
 
 	return (
 		<div className="App" id="container">
