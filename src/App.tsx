@@ -74,6 +74,7 @@ const oldPointsData: PointDataSourceProps[] = [
 		option: {
 			offset: [0, 18],
 			rotate: 10,
+			useTinyIcon: true,
 			hoverColor: "#333333",
 			stopPropagation: true,
 			onClick: (e: any) => {
@@ -345,7 +346,7 @@ function App() {
 			level: 10,
 			onClick: (...e) => console.log("click map", e),
 		});
-		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#e3e3e3" });
+		const pointlayer = new PointLayer(oldPointsData, { hoverColor: "#e3e3e3", imageShrink: false });
 		const polylayer = new PolygonLayer(oldPolygonsData);
 		const linelayer = new PolyLineLayer(oldPolyLinesData, { shrink: false });
 		const labellayer = new LabelLayer(oldLabelData);

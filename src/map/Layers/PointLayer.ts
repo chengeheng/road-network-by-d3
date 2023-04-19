@@ -1,8 +1,9 @@
 import * as d3 from "d3";
-import PointSvg from "../images/point.svg";
-import Layer, { LayerOptionProps, LayerType } from ".";
-import { zooms } from "../constants/config";
 import { debounce } from "lodash";
+import PointSvg from "../images/point.svg";
+import { zooms } from "../constants/config";
+import NavigationSvg from "../images/navigation.svg";
+import Layer, { LayerOptionProps, LayerType } from ".";
 
 import { InitConfigProps } from "../Map";
 
@@ -14,6 +15,14 @@ interface PointLayerOption extends LayerOptionProps {
 	rotate?: number;
 	hoverColor?: string;
 	imageShrink?: boolean;
+
+	tinyIcon?: string;
+	useTinyIcon?: boolean;
+	tinyIconStyle?: {
+		width?: number;
+		height?: number;
+		offset?: [number, number];
+	};
 
 	stopPropagation?: boolean;
 	onClick?: Function;
@@ -28,6 +37,14 @@ interface PointOption extends PointLayerOption {
 	height: number;
 	offset: [number, number];
 	rotate: number;
+
+	tinyIcon: string;
+	useTinyIcon: boolean;
+	tinyIconStyle: {
+		width: number;
+		height: number;
+		offset: [number, number];
+	};
 
 	stopPropagation: boolean;
 	onClick: Function;
@@ -50,6 +67,14 @@ const defaultOption: PointOption = {
 	height: 36,
 	offset: [0, 0],
 	rotate: 0,
+
+	tinyIcon: NavigationSvg,
+	useTinyIcon: false,
+	tinyIconStyle: {
+		width: 36,
+		height: 36,
+		offset: [0, 0],
+	},
 
 	stopPropagation: false,
 	onClick: () => {},
@@ -75,7 +100,7 @@ class PointLayer extends Layer {
 	constructor(dataSource: PointDataSourceProps[], option: PointLayerOption = defaultOption) {
 		super(LayerType.PointLayer, option);
 		this.data = dataSource;
-		this.option = { ...defaultOption, ...option };
+		this.option = this._combineOption(option);
 		this._imageShrink = option.imageShrink === undefined ? true : option.imageShrink;
 		this.clickCount = 0;
 		this.isHided = false;
@@ -87,6 +112,19 @@ class PointLayer extends Layer {
 		this.clickCount = 0;
 		this.isHided = false;
 		this.filterIds = [];
+	}
+
+	private _combineOption(option: PointLayerOption) {
+		const { tinyIconStyle = {}, ...rest } = option;
+		const { tinyIconStyle: defaultTinyIconStyle, ...restOption } = defaultOption;
+		return {
+			...restOption,
+			...rest,
+			tinyIconStyle: {
+				...defaultTinyIconStyle,
+				...tinyIconStyle,
+			},
+		};
 	}
 
 	private _drawWithHoverColor() {
@@ -298,12 +336,18 @@ class PointLayer extends Layer {
 			let width = option.width;
 			let height = option.height;
 			let fontSize = 12;
+			let icon = i.icon ?? i.option?.icon ?? this.option.icon;
 			if (this._imageShrink === false) {
 				const scale = 1 / zooms[this._mapConfig.level - 1];
 				width = option.width * scale;
 				height = option.height * scale;
 				offset = [offset[0] * scale, offset[1] * scale];
 				fontSize = fontSize * scale;
+			}
+			const useTinyIcon = i.option?.useTinyIcon ?? option.useTinyIcon;
+			if (useTinyIcon && this._mapConfig.level > 6) {
+				icon = i.option?.tinyIcon ?? option.tinyIcon;
+				// rotate = rotate - 143;
 			}
 			const imageCenter: [number, number] = [
 				coordinate[0] + offset[0],
@@ -317,7 +361,8 @@ class PointLayer extends Layer {
 			return {
 				...i,
 				coordinate: coordinate,
-				icon: i.icon ?? i.option?.icon ?? this.option.icon,
+				icon: icon,
+				useTinyIcon,
 				option: {
 					...option,
 					width,

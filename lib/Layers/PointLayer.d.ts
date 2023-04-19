@@ -9,6 +9,13 @@ interface PointLayerOption extends LayerOptionProps {
     rotate?: number;
     hoverColor?: string;
     imageShrink?: boolean;
+    tinyIcon?: string;
+    useTinyIcon?: boolean;
+    tinyIconStyle?: {
+        width?: number;
+        height?: number;
+        offset?: [number, number];
+    };
     stopPropagation?: boolean;
     onClick?: Function;
     onRightClick?: Function;
@@ -21,6 +28,13 @@ interface PointOption extends PointLayerOption {
     height: number;
     offset: [number, number];
     rotate: number;
+    tinyIcon: string;
+    useTinyIcon: boolean;
+    tinyIconStyle: {
+        width: number;
+        height: number;
+        offset: [number, number];
+    };
     stopPropagation: boolean;
     onClick: Function;
     onRightClick: Function;
@@ -47,6 +61,7 @@ declare class PointLayer extends Layer {
     private _hover;
     constructor(dataSource: PointDataSourceProps[], option?: PointLayerOption);
     private _initState;
+    private _combineOption;
     private _drawWithHoverColor;
     private _drawWithOutHoverColor;
     private _formatData;
