@@ -37,7 +37,15 @@ class Map {
 	private _svg!: d3.Selection<SVGSVGElement, unknown, null, undefined>;
 	private _mapContainer!: d3.Selection<SVGGElement, unknown, null, undefined>;
 	private _layerContainer!: SVGGElement;
+	private _extraContainer!: SVGGElement;
 	private _toolContainer!: SVGGElement;
+	private _modalConfigs: {
+		id: string | number;
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	}[];
 
 	private _zoom!: d3.ZoomBehavior<SVGSVGElement, unknown>;
 
@@ -50,6 +58,7 @@ class Map {
 		this._level = options.level === undefined ? 2 : options.level;
 		this._lastLevel = this._level;
 		this.projection = d3.geoMercator();
+		this._modalConfigs = [];
 
 		const container = document.getElementById(this.id);
 		if (container === null) {
@@ -96,12 +105,14 @@ class Map {
 		}
 		this._mapContainer = this._svg.append("g");
 		this._layerContainer = this._mapContainer.append("g").attr("id", "layers").node()!;
+
+		this._extraContainer = this._mapContainer.append("g").attr("id", "extra").node()!;
+
 		this._toolContainer = this._mapContainer
 			.append("g")
 			.attr("id", "tools")
 			.style("pointer-events", "none")
 			.node()!;
-
 		// 添加缩放事件
 		this._zoom = d3
 			.zoom<SVGSVGElement, unknown>()
@@ -137,6 +148,7 @@ class Map {
 			level: this._level,
 		};
 		this._layers.forEach(i => i.updateMapConfig(config));
+		this._updateModal();
 	}
 
 	private _addClickFn() {
@@ -332,7 +344,46 @@ class Map {
 		});
 	}
 
-	// addModal() {}
+	addModal(options: { id: string | number; x: number; y: number; width: number; height: number }) {
+		const { id, x, y, width, height } = options;
+		const scale = 1 / zooms[this._level - 1];
+		this._modalConfigs.push(options);
+
+		const foreignObject = d3
+			.select(this._extraContainer)
+			.append("foreignObject")
+			.attr("id", `foreignObject_${id}`)
+			.attr("x", x)
+			.attr("y", y)
+			.attr("width", width)
+			.attr("height", height)
+			.attr("transform", `translate(${x}, ${y}) scale(${scale}) translate(${-x}, ${-y}) `);
+
+		return foreignObject.node();
+	}
+
+	removeModal(id: string | number) {
+		d3.select(this._extraContainer).select(`#foreignObject_${id}`).remove();
+		this._modalConfigs = this._modalConfigs.filter(i => i.id !== id);
+	}
+
+	removeAllModal() {
+		d3.select(this._extraContainer).selectAll("foreignObject").remove();
+	}
+
+	private _updateModal() {
+		const scale = 1 / zooms[this._level - 1];
+		d3.select(this._extraContainer)
+			.selectAll("foreignObject")
+			.data(this._modalConfigs)
+
+			.attr(
+				"transform",
+				d => `translate(${d.x}, ${d.y}) scale(${scale}) translate(${-d.x}, ${-d.y}) `
+			);
+		// .attr("width", d => d.width * scale)
+		// .attr("height", d => d.height * scale);
+	}
 }
 
 export default Map;

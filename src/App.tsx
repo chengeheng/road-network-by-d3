@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import ReactDOM from "react-dom";
+import ReactDOM from "react-dom";
 import { useEffect } from "react";
 
 import "./App.css";
@@ -18,6 +18,7 @@ import {
 } from "./map";
 
 import Toast from "./toast";
+import { ReactPortal } from "react";
 
 const focusCoords: [number, number][] = [
 	[118.391213, 31.343501],
@@ -338,12 +339,28 @@ const newPolygonsData: PolygonDataSourceProps[] = [
 	},
 ];
 
+const TestPortal = ({ click }: { click: Function }) => {
+	return (
+		<div style={{ width: "100%", height: "100%", background: "skyblue", fontSize: "12px" }}>
+			<span
+				onClick={e => {
+					e.stopPropagation();
+					click("click", e);
+				}}
+			>
+				测试
+			</span>
+		</div>
+	);
+};
+
 function App() {
 	const [pointLayer, setPointLayer] = useState<PointLayer>();
 	const [polygonLayer, setPolygonLayer] = useState<PolygonLayer>();
 	const [polyLineLayer, setPolyLineLayer] = useState<PolyLineLayer>();
 	const [labelLayer, setLabelLayer] = useState<LabelLayer>();
 	const [map, setMap] = useState<Map>();
+	const [modal, setModal] = useState<ReactPortal>();
 	useEffect(() => {
 		const map = new Map("container", {
 			// center: [118.39057, 31.342792],
@@ -556,6 +573,22 @@ function App() {
 				map.paintPolyline().then(res => console.log("paint polyline:", res));
 			},
 		},
+		{
+			label: "添加自定义弹窗",
+			onClick: () => {
+				if (!map) return;
+				const container = map.addModal({ id: 1, x: 345, y: 725, width: 100, height: 200 });
+				const ExtraModal = ReactDOM.createPortal(<TestPortal click={console.log} />, container!);
+				setModal(ExtraModal);
+			},
+		},
+		{
+			label: "移除自定义弹窗",
+			onClick: () => {
+				if (!map) return;
+				map.removeModal(1);
+			},
+		},
 	];
 
 	// useEffect(() => {
@@ -580,6 +613,7 @@ function App() {
 					</button>
 				))}
 			</div>
+			{modal}
 		</div>
 	);
 }
